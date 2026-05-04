@@ -50,7 +50,7 @@ MathematicalToolsExtension::MathematicalToolsExtension() {
   GetAllExpressions()["log10"].SetFunctionName("gdjs.evtTools.common.log10");
   GetAllExpressions()["log2"].SetFunctionName("gdjs.evtTools.common.log2");
   GetAllExpressions()["log"].SetFunctionName("Math.log");
-  GetAllExpressions()["ln"].SetFunctionName("Math.ln");
+  GetAllExpressions()["ln"].SetFunctionName("Math.log");
   GetAllExpressions()["pow"].SetFunctionName("Math.pow");
   GetAllExpressions()["nthroot"].SetFunctionName(
       "gdjs.evtTools.common.nthroot");
