@@ -71,9 +71,7 @@ export const addSerializedInstances = ({
 
   if (newInstances.length > 0) {
     newInstances.forEach(instance => {
-      const parentPersistentUuid = typeof instance.getParentPersistentUuid === 'function'
-        ? instance.getParentPersistentUuid()
-        : null;
+      const parentPersistentUuid = instance.getParentPersistentUuid();
       if (
         parentPersistentUuid &&
         oldToNewPersistentUuid.has(parentPersistentUuid)

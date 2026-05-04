@@ -956,7 +956,35 @@ export default class SceneEditor extends React.Component<Props, State> {
           selectedInstancesCount={
             this.instancesSelection.getSelectedInstances().length
           }
+          toggleObjectsList={this.toggleObjectsList}
+          isObjectsListShown={editorDisplay.isEditorVisible('objects-list')}
+          toggleObjectGroupsList={this.toggleObjectGroupsList}
+          isObjectGroupsListShown={editorDisplay.isEditorVisible(
+            'object-groups-list'
+          )}
+          toggleCinematicTimeline={this.toggleCinematicTimeline}
+          isCinematicTimelineShown={this.state.isCinematicTimelineShown}
+          onOpenScenesManager={this.openScenesManager}
+          onOpenSceneEvents={this.openCurrentSceneEvents}
+          onOpenSceneScript={this.openCurrentSceneScriptWorkspace}
+          sceneEventsEnabled={!!this.props.layout}
+          sceneScriptEnabled={!!this.props.layout}
+          onOpenExtensionsManager={this.openExtensionsManager}
+          toggleProperties={this.toggleProperties}
+          isPropertiesShown={editorDisplay.isEditorVisible('properties')}
           deleteSelection={this.deleteSelection}
+          toggleInstancesList={this.toggleInstancesList}
+          isInstancesListShown={editorDisplay.isEditorVisible('instances-list')}
+          toggleLayersList={this.toggleLayersList}
+          isLayersListShown={editorDisplay.isEditorVisible('layers-list')}
+          toggleProjectPanel={this.toggleProjectPanel}
+          isProjectPanelShown={editorDisplay.isEditorVisible(
+            'project-resources'
+          )}
+          toggleConsolePanel={this.toggleConsolePanel}
+          isConsolePanelShown={editorDisplay.isEditorVisible('console')}
+          toggleBuildPanel={this.toggleBuildPanel}
+          isBuildPanelShown={editorDisplay.isEditorVisible('build')}
           toggleWindowMask={this.toggleWindowMask}
           isWindowMaskShown={!!this.state.instancesEditorSettings.windowMask}
           toggleGrid={this.toggleGrid}
@@ -989,7 +1017,21 @@ export default class SceneEditor extends React.Component<Props, State> {
           selectedInstancesCount={
             this.instancesSelection.getSelectedInstances().length
           }
+          toggleObjectsList={this.toggleObjectsList}
+          toggleObjectGroupsList={this.toggleObjectGroupsList}
+          toggleCinematicTimeline={this.toggleCinematicTimeline}
+          isCinematicTimelineShown={this.state.isCinematicTimelineShown}
+          toggleProperties={this.toggleProperties}
+          onOpenSceneEvents={this.openCurrentSceneEvents}
+          onOpenSceneScript={this.openCurrentSceneScriptWorkspace}
+          sceneEventsEnabled={!!this.props.layout}
+          sceneScriptEnabled={!!this.props.layout}
           deleteSelection={this.deleteSelection}
+          toggleInstancesList={this.toggleInstancesList}
+          toggleLayersList={this.toggleLayersList}
+          toggleProjectPanel={this.toggleProjectPanel}
+          toggleConsolePanel={this.toggleConsolePanel}
+          toggleBuildPanel={this.toggleBuildPanel}
           toggleWindowMask={this.toggleWindowMask}
           isWindowMaskShown={!!this.state.instancesEditorSettings.windowMask}
           toggleGrid={this.toggleGrid}
@@ -1068,6 +1110,40 @@ export default class SceneEditor extends React.Component<Props, State> {
       }));
     }
   }
+
+  toggleObjectsList = () => {
+    if (!this.editorDisplay) return;
+    this.editorDisplay.toggleEditorView('objects-list');
+  };
+
+  toggleProperties = () => {
+    if (!this.editorDisplay) return;
+    this.editorDisplay.toggleEditorView('properties');
+  };
+
+  toggleObjectGroupsList = () => {
+    if (!this.editorDisplay) return;
+    this.editorDisplay.toggleEditorView('object-groups-list');
+  };
+
+  toggleCinematicTimeline = () => {
+    if (!this.canCurrentSceneContain3DObjects()) {
+      return;
+    }
+    const shouldShowTimeline = !this.state.isCinematicTimelineShown;
+    if (shouldShowTimeline && this.props.gameEditorMode !== 'embedded-game') {
+      this.setGameEditorMode('embedded-game');
+    }
+
+    this.setState(
+      {
+        isCinematicTimelineShown: shouldShowTimeline,
+      },
+      () => {
+        this.updateToolbar();
+      }
+    );
+  };
 
   closeCinematicTimeline = () => {
     if (!this.state.isCinematicTimelineShown) return;
@@ -1200,6 +1276,31 @@ export default class SceneEditor extends React.Component<Props, State> {
         command.handler();
       }
     }, 120);
+  };
+
+  toggleInstancesList = () => {
+    if (!this.editorDisplay) return;
+    this.editorDisplay.toggleEditorView('instances-list');
+  };
+
+  toggleLayersList = () => {
+    if (!this.editorDisplay) return;
+    this.editorDisplay.toggleEditorView('layers-list');
+  };
+
+  toggleProjectPanel = () => {
+    if (!this.editorDisplay) return;
+    this.editorDisplay.toggleEditorView('project-resources');
+  };
+
+  toggleConsolePanel = () => {
+    if (!this.editorDisplay) return;
+    this.editorDisplay.toggleEditorView('console');
+  };
+
+  toggleBuildPanel = () => {
+    if (!this.editorDisplay) return;
+    this.editorDisplay.toggleEditorView('build');
   };
 
   toggleWindowMask = () => {
@@ -2863,6 +2964,12 @@ export default class SceneEditor extends React.Component<Props, State> {
             enabled: hasSelectedInstances,
           },
         ].filter(Boolean),
+      },
+      { type: 'separator' },
+      {
+        label: i18n._(t`Show/Hide instance properties`),
+        click: () => this.toggleProperties(),
+        enabled: hasSelectedInstances,
       },
     ].filter(Boolean);
   };

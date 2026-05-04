@@ -18,6 +18,7 @@ import EditSceneIcon from '../../UI/CustomSvgIcons/EditScene';
 import EventsIcon from '../../UI/CustomSvgIcons/Events';
 import FileWithLinesIcon from '../../UI/CustomSvgIcons/FileWithLines';
 import RectangleIcon from '../../UI/CustomSvgIcons/Rectangle';
+import VideoIcon from '../../UI/CustomSvgIcons/Video';
 import CompactToggleButtons from '../../UI/CompactToggleButtons';
 import Grid2d from '../../UI/CustomSvgIcons/Grid2d';
 import Grid3d from '../../UI/CustomSvgIcons/Grid3d';
@@ -29,10 +30,20 @@ type Props = {|
   setGameEditorMode: ('embedded-game' | 'instances-editor') => void,
   canUse2DEditor: boolean,
   canUse3DEditor: boolean,
+  toggleObjectsList: () => void,
+  toggleObjectGroupsList: () => void,
+  toggleCinematicTimeline: () => void,
+  isCinematicTimelineShown: boolean,
+  toggleProperties: () => void,
   onOpenSceneEvents: () => void,
   onOpenSceneScript: () => void,
   sceneEventsEnabled: boolean,
   sceneScriptEnabled: boolean,
+  toggleInstancesList: () => void,
+  toggleLayersList: () => void,
+  toggleProjectPanel: () => void,
+  toggleConsolePanel: () => void,
+  toggleBuildPanel: () => void,
   undo: () => void,
   canUndo: boolean,
   redo: () => void,
@@ -62,6 +73,14 @@ const Toolbar: React.ComponentType<Props> = React.memo<Props>(function(props) {
   return (
     <>
       <ToolbarCommands
+        toggleObjectsList={props.toggleObjectsList}
+        toggleObjectGroupsList={props.toggleObjectGroupsList}
+        togglePropertiesPanel={props.toggleProperties}
+        toggleInstancesList={props.toggleInstancesList}
+        toggleLayersList={props.toggleLayersList}
+        toggleProjectPanel={props.toggleProjectPanel}
+        toggleConsolePanel={props.toggleConsolePanel}
+        toggleBuildPanel={props.toggleBuildPanel}
         undo={props.undo}
         canUndo={props.canUndo}
         redo={props.redo}
@@ -121,6 +140,22 @@ const Toolbar: React.ComponentType<Props> = React.memo<Props>(function(props) {
         onClick={props.onOpenSceneScript}
         disabled={!props.sceneScriptEnabled}
       />
+      <IconButton
+        size="small"
+        color="default"
+        onClick={props.toggleCinematicTimeline}
+        selected={props.isCinematicTimelineShown}
+        disabled={props.gameEditorMode !== 'embedded-game'}
+        tooltip={
+          props.gameEditorMode !== 'embedded-game'
+            ? t`Switch to 3D editor to use Cinematic Timeline`
+            : props.isCinematicTimelineShown
+            ? t`Close Cinematic Timeline`
+            : t`Open Cinematic Timeline`
+        }
+      >
+        <VideoIcon />
+      </IconButton>
       <IconButton
         size="small"
         color="default"

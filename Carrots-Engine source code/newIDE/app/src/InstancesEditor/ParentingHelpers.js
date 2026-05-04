@@ -22,7 +22,6 @@ export const setKeepWorldOnReparent = (value: boolean) => {
 export const getParentPersistentUuid = (
   instance: gdInitialInstance
 ): string | null => {
-  if (typeof instance.getParentPersistentUuid !== 'function') return null;
   const parentPersistentUuid = instance.getParentPersistentUuid();
   return parentPersistentUuid ? parentPersistentUuid : null;
 };

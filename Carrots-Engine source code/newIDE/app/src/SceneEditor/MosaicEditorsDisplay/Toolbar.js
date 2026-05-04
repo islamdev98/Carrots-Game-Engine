@@ -8,6 +8,19 @@ import IconButton from '../../UI/IconButton';
 import ElementWithMenu from '../../UI/Menu/ElementWithMenu';
 import ToolbarCommands from '../ToolbarCommands';
 import { type MenuItemTemplate } from '../../UI/Menu/Menu.flow';
+import ObjectIcon from '../../UI/CustomSvgIcons/Object';
+import ObjectGroupIcon from '../../UI/CustomSvgIcons/ObjectGroup';
+import SceneIcon from '../../UI/CustomSvgIcons/Scene';
+import EventsIcon from '../../UI/CustomSvgIcons/Events';
+import FileWithLinesIcon from '../../UI/CustomSvgIcons/FileWithLines';
+import ExtensionIcon from '../../UI/CustomSvgIcons/Extension';
+import EditIcon from '../../UI/CustomSvgIcons/Edit';
+import InstancesListIcon from '../../UI/CustomSvgIcons/InstancesList';
+import LayersIcon from '../../UI/CustomSvgIcons/Layers';
+import ProjectResourcesIcon from '../../UI/CustomSvgIcons/ProjectResources';
+import ConsoleIcon from '../../UI/CustomSvgIcons/Console';
+import BuildIcon from '../../UI/CustomSvgIcons/Hammer';
+import VideoIcon from '../../UI/CustomSvgIcons/Video';
 import UndoIcon from '../../UI/CustomSvgIcons/Undo';
 import RedoIcon from '../../UI/CustomSvgIcons/Redo';
 import TrashIcon from '../../UI/CustomSvgIcons/Trash';
@@ -15,6 +28,19 @@ import GridIcon from '../../UI/CustomSvgIcons/Grid';
 import ZoomInIcon from '../../UI/CustomSvgIcons/ZoomIn';
 import EditSceneIcon from '../../UI/CustomSvgIcons/EditScene';
 import RectangleIcon from '../../UI/CustomSvgIcons/Rectangle';
+import {
+  OPEN_INSTANCES_PANEL_BUTTON_ID,
+  OPEN_LAYERS_PANEL_BUTTON_ID,
+  OPEN_PROJECT_PANEL_BUTTON_ID,
+  OPEN_CONSOLE_PANEL_BUTTON_ID,
+  OPEN_BUILD_PANEL_BUTTON_ID,
+  OPEN_SCENES_MANAGER_BUTTON_ID,
+  OPEN_EXTENSIONS_MANAGER_BUTTON_ID,
+  OPEN_OBJECT_GROUPS_PANEL_BUTTON_ID,
+  OPEN_OBJECTS_PANEL_BUTTON_ID,
+  OPEN_PROPERTIES_PANEL_BUTTON_ID,
+  TOGGLE_CINEMATIC_TIMELINE_BUTTON_ID,
+} from '../utils';
 import CompactToggleButtons from '../../UI/CompactToggleButtons';
 import Grid2d from '../../UI/CustomSvgIcons/Grid2d';
 import Grid3d from '../../UI/CustomSvgIcons/Grid3d';
@@ -26,12 +52,36 @@ type Props = {|
   setGameEditorMode: ('embedded-game' | 'instances-editor') => void,
   canUse2DEditor: boolean,
   canUse3DEditor: boolean,
+  toggleObjectsList: () => void,
+  isObjectsListShown: boolean,
+  toggleObjectGroupsList: () => void,
+  isObjectGroupsListShown: boolean,
+  toggleCinematicTimeline: () => void,
+  isCinematicTimelineShown: boolean,
+  onOpenScenesManager: () => void,
+  onOpenSceneEvents: () => void,
+  onOpenSceneScript: () => void,
+  sceneEventsEnabled: boolean,
+  sceneScriptEnabled: boolean,
+  onOpenExtensionsManager: () => void,
+  toggleProperties: () => void,
+  isPropertiesShown: boolean,
   undo: () => void,
   canUndo: boolean,
   redo: () => void,
   canRedo: boolean,
   deleteSelection: () => void,
   selectedInstancesCount: number,
+  toggleInstancesList: () => void,
+  isInstancesListShown: boolean,
+  toggleLayersList: () => void,
+  isLayersListShown: boolean,
+  toggleProjectPanel: () => void,
+  isProjectPanelShown: boolean,
+  toggleConsolePanel: () => void,
+  isConsolePanelShown: boolean,
+  toggleBuildPanel: () => void,
+  isBuildPanelShown: boolean,
   isWindowMaskShown: boolean,
   toggleWindowMask: () => void,
   isGridShown: boolean,
@@ -57,6 +107,14 @@ const Toolbar: React.ComponentType<Props> = React.memo<Props>(function Toolbar(
   return (
     <>
       <ToolbarCommands
+        toggleObjectsList={props.toggleObjectsList}
+        toggleObjectGroupsList={props.toggleObjectGroupsList}
+        togglePropertiesPanel={props.toggleProperties}
+        toggleInstancesList={props.toggleInstancesList}
+        toggleLayersList={props.toggleLayersList}
+        toggleProjectPanel={props.toggleProjectPanel}
+        toggleConsolePanel={props.toggleConsolePanel}
+        toggleBuildPanel={props.toggleBuildPanel}
         undo={props.undo}
         canUndo={props.canUndo}
         redo={props.redo}
@@ -103,9 +161,175 @@ const Toolbar: React.ComponentType<Props> = React.memo<Props>(function Toolbar(
               : []),
           ]}
         />
+        <IconButton
+          size="small"
+          color="default"
+          id={OPEN_INSTANCES_PANEL_BUTTON_ID}
+          onClick={props.toggleInstancesList}
+          selected={props.isInstancesListShown}
+          tooltip={
+            props.isInstancesListShown
+              ? t`Close Hierarchy Panel`
+              : t`Open Hierarchy Panel`
+          }
+        >
+          <InstancesListIcon />
+        </IconButton>
+        <IconButton
+          size="small"
+          color="default"
+          id={OPEN_LAYERS_PANEL_BUTTON_ID}
+          onClick={props.toggleLayersList}
+          selected={props.isLayersListShown}
+          tooltip={
+            props.isLayersListShown
+              ? t`Close Layers Panel`
+              : t`Open Layers Panel`
+          }
+        >
+          <LayersIcon />
+        </IconButton>
+        <IconButton
+          size="small"
+          color="default"
+          id={OPEN_PROJECT_PANEL_BUTTON_ID}
+          onClick={props.toggleProjectPanel}
+          selected={props.isProjectPanelShown}
+          tooltip={
+            props.isProjectPanelShown
+              ? t`Close Project Panel`
+              : t`Open Project Panel`
+          }
+        >
+          <ProjectResourcesIcon />
+        </IconButton>
+        <IconButton
+          size="small"
+          color="default"
+          id={OPEN_CONSOLE_PANEL_BUTTON_ID}
+          onClick={props.toggleConsolePanel}
+          selected={props.isConsolePanelShown}
+          tooltip={
+            props.isConsolePanelShown
+              ? t`Close Console Panel`
+              : t`Open Console Panel`
+          }
+        >
+          <ConsoleIcon />
+        </IconButton>
+        <IconButton
+          size="small"
+          color="default"
+          id={OPEN_BUILD_PANEL_BUTTON_ID}
+          onClick={props.toggleBuildPanel}
+          selected={props.isBuildPanelShown}
+          tooltip={
+            props.isBuildPanelShown
+              ? t`Close Build Panel`
+              : t`Open Build Panel`
+          }
+        >
+          <BuildIcon />
+        </IconButton>
+        <IconButton
+          size="small"
+          color="default"
+          id="scene-toolbar-open-script-button-left"
+          onClick={props.onOpenSceneScript}
+          disabled={!props.sceneScriptEnabled}
+          tooltip={t`Open Script Workspace`}
+        >
+          <FileWithLinesIcon />
+        </IconButton>
         <ToolbarSeparator />
       </ToolbarGroup>
       <ToolbarGroup lastChild>
+        <IconButton
+          size="small"
+          color="default"
+          id={OPEN_OBJECTS_PANEL_BUTTON_ID}
+          onClick={props.toggleObjectsList}
+          selected={props.isObjectsListShown}
+          tooltip={
+            props.isObjectsListShown
+              ? t`Close Objects Panel`
+              : t`Open Objects Panel`
+          }
+        >
+          <ObjectIcon />
+        </IconButton>
+        <IconButton
+          size="small"
+          color="default"
+          id={OPEN_OBJECT_GROUPS_PANEL_BUTTON_ID}
+          onClick={props.toggleObjectGroupsList}
+          selected={props.isObjectGroupsListShown}
+          tooltip={
+            props.isObjectGroupsListShown
+              ? t`Close Object Groups Panel`
+              : t`Open Object Groups Panel`
+          }
+        >
+          <ObjectGroupIcon />
+        </IconButton>
+        <IconButton
+          size="small"
+          color="default"
+          id={TOGGLE_CINEMATIC_TIMELINE_BUTTON_ID}
+          onClick={props.toggleCinematicTimeline}
+          selected={props.isCinematicTimelineShown}
+          disabled={props.gameEditorMode !== 'embedded-game'}
+          tooltip={
+            props.gameEditorMode !== 'embedded-game'
+              ? t`Switch to 3D editor to use Cinematic Timeline`
+              : props.isCinematicTimelineShown
+              ? t`Close Cinematic Timeline`
+              : t`Open Cinematic Timeline`
+          }
+        >
+          <VideoIcon />
+        </IconButton>
+        <IconButton
+          size="small"
+          color="default"
+          id={OPEN_SCENES_MANAGER_BUTTON_ID}
+          onClick={props.onOpenScenesManager}
+          tooltip={t`Open Scenes Manager`}
+        >
+          <SceneIcon />
+        </IconButton>
+        <IconButton
+          id="scene-toolbar-open-events-button"
+          onClick={props.onOpenSceneEvents}
+          disabled={!props.sceneEventsEnabled}
+          tooltip={t`Open Events Sheet`}
+        >
+          <EventsIcon />
+        </IconButton>
+        <IconButton
+          size="small"
+          color="default"
+          id={OPEN_EXTENSIONS_MANAGER_BUTTON_ID}
+          onClick={props.onOpenExtensionsManager}
+          tooltip={t`Open Extensions Manager`}
+        >
+          <ExtensionIcon />
+        </IconButton>
+        <IconButton
+          size="small"
+          color="default"
+          id={OPEN_PROPERTIES_PANEL_BUTTON_ID}
+          onClick={props.toggleProperties}
+          selected={props.isPropertiesShown}
+          tooltip={
+            props.isPropertiesShown
+              ? t`Close Inspector Panel`
+              : t`Open Inspector Panel`
+          }
+        >
+          <EditIcon />
+        </IconButton>
+        <ToolbarSeparator />
         <IconButton
           size="small"
           color="default"
