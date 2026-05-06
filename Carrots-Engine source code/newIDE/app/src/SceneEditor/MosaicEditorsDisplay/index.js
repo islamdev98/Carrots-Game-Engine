@@ -7,6 +7,7 @@ import { I18n } from '@lingui/react';
 import PreferencesContext from '../../MainFrame/Preferences/PreferencesContext';
 import EditorMosaic, {
   type EditorMosaicInterface,
+  type EditorMosaicNode,
 } from '../../UI/EditorMosaic';
 import InstancesEditor from '../../InstancesEditor';
 import LayersList, { type LayersListInterface } from '../../LayersList';
@@ -37,8 +38,10 @@ import {
 import { useDoNowOrAfterRender } from '../../Utils/UseDoNowOrAfterRender';
 import { preventGameFramePointerEvents } from '../../EmbeddedGame/EmbeddedGameFrame';
 import { EmbeddedGameFrameHole } from '../../EmbeddedGame/EmbeddedGameFrameHole';
+import './InspectorPanel.css';
 
 const SCENE_EDITOR_MOSAIC_LAYOUT_KEY = 'scene-editor-unity-layout-v1';
+const INSPECTOR_PANEL_WIDTH = 320;
 
 const initialMosaicEditorNodes = {
   direction: 'column',
@@ -47,12 +50,7 @@ const initialMosaicEditorNodes = {
     direction: 'row',
     splitPercentage: 18,
     first: 'instances-list',
-    second: {
-      direction: 'row',
-      splitPercentage: 77,
-      first: 'instances-editor',
-      second: 'properties',
-    },
+    second: 'instances-editor',
   },
   second: 'project-resources',
 };
@@ -84,6 +82,55 @@ const defaultPanelConfigByEditor = {
   build: {
     position: 'bottom',
   },
+};
+
+const styles = {
+  container: {
+    display: 'flex',
+    width: '100%',
+    height: '100%',
+    minWidth: 0,
+    minHeight: 0,
+  },
+  mosaicContainer: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 0,
+  },
+  inspectorContainer: {
+    width: INSPECTOR_PANEL_WIDTH,
+    minWidth: INSPECTOR_PANEL_WIDTH,
+    maxWidth: INSPECTOR_PANEL_WIDTH,
+    height: '100%',
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    borderLeft: '1px solid #2D3748',
+    background: '#0F172A',
+    overflow: 'hidden',
+  },
+};
+
+const removeEditorFromLayout = (
+  node: EditorMosaicNode,
+  editorId: EditorId
+): ?EditorMosaicNode => {
+  if (typeof node === 'string') {
+    return node === editorId ? null : node;
+  }
+
+  const first = removeEditorFromLayout(node.first, editorId);
+  const second = removeEditorFromLayout(node.second, editorId);
+
+  if (!first && !second) return null;
+  if (!first) return second;
+  if (!second) return first;
+
+  return {
+    ...node,
+    first,
+    second,
+  };
 };
 
 // Forward ref to allow Scene editor to force update some editors
@@ -177,17 +224,20 @@ const MosaicEditorsDisplay: React.ComponentType<{
       [onInstancesModified, forceUpdateInstancesList]
     );
     const toggleEditorView = React.useCallback((editorId: EditorId) => {
+      if (editorId === 'properties') return;
       if (!editorMosaicRef.current) return;
       const config = defaultPanelConfigByEditor[editorId];
       // $FlowFixMe[incompatible-type]
       editorMosaicRef.current.toggleEditor(editorId, config.position);
     }, []);
     const isEditorVisible = React.useCallback((editorId: EditorId) => {
+      if (editorId === 'properties') return true;
       if (!editorMosaicRef.current) return false;
       return editorMosaicRef.current.getOpenedEditorNames().includes(editorId);
     }, []);
     const ensureEditorVisible = React.useCallback(
       (editorId: EditorId) => {
+        if (editorId === 'properties') return;
         if (!isEditorVisible(editorId)) {
           toggleEditorView(editorId);
         }
@@ -295,71 +345,104 @@ const MosaicEditorsDisplay: React.ComponentType<{
       ? eventsBasedObject.getDefaultVariant() !== eventsBasedObjectVariant
       : false;
 
+    const renderInspectorPanel = React.useCallback(
+      () => (
+        <I18n>
+          {({ i18n }) => (
+            <InstanceOrObjectPropertiesEditorContainer
+              i18n={i18n}
+              project={project}
+              resourceManagementProps={resourceManagementProps}
+              layout={layout}
+              eventsFunctionsExtension={eventsFunctionsExtension}
+              onUpdateBehaviorsSharedData={updateBehaviorsSharedData}
+              objectsContainer={objectsContainer}
+              globalObjectsContainer={globalObjectsContainer}
+              layersContainer={layersContainer}
+              projectScopedContainersAccessor={projectScopedContainersAccessor}
+              initialInstances={initialInstances}
+              instances={selectedInstances}
+              objects={selectedObjects}
+              layer={selectedLayer}
+              editInstanceVariables={props.editInstanceVariables}
+              editObjectInPropertiesPanel={props.editObjectInPropertiesPanel}
+              onEditObject={props.onEditObject}
+              onObjectsModified={props.onObjectsModified}
+              onEffectAdded={props.onEffectAdded}
+              onInstancesModified={_onInstancesModified}
+              onGetInstanceSize={getInstanceSize}
+              ref={instanceOrObjectPropertiesEditorRef}
+              unsavedChanges={props.unsavedChanges}
+              historyHandler={props.historyHandler}
+              tileMapTileSelection={props.tileMapTileSelection}
+              onSelectTileMapTile={props.onSelectTileMapTile}
+              lastSelectionType={props.lastSelectionType}
+              onWillInstallExtension={props.onWillInstallExtension}
+              onExtensionInstalled={props.onExtensionInstalled}
+              onOpenEventBasedObjectVariantEditor={
+                props.onOpenEventBasedObjectVariantEditor
+              }
+              onDeleteEventsBasedObjectVariant={
+                props.onDeleteEventsBasedObjectVariant
+              }
+              isVariableListLocked={isCustomVariant}
+              isBehaviorListLocked={isCustomVariant}
+              onEditLayerEffects={props.editLayerEffects}
+              onEditLayer={props.editLayer}
+              onLayersModified={props.onLayersModified}
+              eventsBasedObject={props.eventsBasedObject}
+              eventsBasedObjectVariant={props.eventsBasedObjectVariant}
+              getContentAABB={
+                editorRef.current ? editorRef.current.getContentAABB : () => null
+              }
+              onEventsBasedObjectChildrenEdited={
+                props.onEventsBasedObjectChildrenEdited
+              }
+            />
+          )}
+        </I18n>
+      ),
+      [
+        project,
+        resourceManagementProps,
+        layout,
+        eventsFunctionsExtension,
+        updateBehaviorsSharedData,
+        objectsContainer,
+        globalObjectsContainer,
+        layersContainer,
+        projectScopedContainersAccessor,
+        initialInstances,
+        selectedInstances,
+        selectedObjects,
+        selectedLayer,
+        props.editInstanceVariables,
+        props.editObjectInPropertiesPanel,
+        props.onEditObject,
+        props.onObjectsModified,
+        props.onEffectAdded,
+        _onInstancesModified,
+        getInstanceSize,
+        props.unsavedChanges,
+        props.historyHandler,
+        props.tileMapTileSelection,
+        props.onSelectTileMapTile,
+        props.lastSelectionType,
+        props.onWillInstallExtension,
+        props.onExtensionInstalled,
+        props.onOpenEventBasedObjectVariantEditor,
+        props.onDeleteEventsBasedObjectVariant,
+        isCustomVariant,
+        props.editLayerEffects,
+        props.editLayer,
+        props.onLayersModified,
+        props.eventsBasedObject,
+        props.eventsBasedObjectVariant,
+        props.onEventsBasedObjectChildrenEdited,
+      ]
+    );
+
     const editors = {
-      properties: {
-        type: 'secondary',
-        title: t`Inspector`,
-        renderEditor: () => (
-          <I18n>
-            {({ i18n }) => (
-              <InstanceOrObjectPropertiesEditorContainer
-                i18n={i18n}
-                project={project}
-                resourceManagementProps={resourceManagementProps}
-                layout={layout}
-                eventsFunctionsExtension={eventsFunctionsExtension}
-                onUpdateBehaviorsSharedData={updateBehaviorsSharedData}
-                objectsContainer={objectsContainer}
-                globalObjectsContainer={globalObjectsContainer}
-                layersContainer={layersContainer}
-                projectScopedContainersAccessor={
-                  projectScopedContainersAccessor
-                }
-                initialInstances={initialInstances}
-                instances={selectedInstances}
-                objects={selectedObjects}
-                layer={selectedLayer}
-                editInstanceVariables={props.editInstanceVariables}
-                editObjectInPropertiesPanel={props.editObjectInPropertiesPanel}
-                onEditObject={props.onEditObject}
-                onObjectsModified={props.onObjectsModified}
-                onEffectAdded={props.onEffectAdded}
-                onInstancesModified={_onInstancesModified}
-                onGetInstanceSize={getInstanceSize}
-                ref={instanceOrObjectPropertiesEditorRef}
-                unsavedChanges={props.unsavedChanges}
-                historyHandler={props.historyHandler}
-                tileMapTileSelection={props.tileMapTileSelection}
-                onSelectTileMapTile={props.onSelectTileMapTile}
-                lastSelectionType={props.lastSelectionType}
-                onWillInstallExtension={props.onWillInstallExtension}
-                onExtensionInstalled={props.onExtensionInstalled}
-                onOpenEventBasedObjectVariantEditor={
-                  props.onOpenEventBasedObjectVariantEditor
-                }
-                onDeleteEventsBasedObjectVariant={
-                  props.onDeleteEventsBasedObjectVariant
-                }
-                isVariableListLocked={isCustomVariant}
-                isBehaviorListLocked={isCustomVariant}
-                onEditLayerEffects={props.editLayerEffects}
-                onEditLayer={props.editLayer}
-                onLayersModified={props.onLayersModified}
-                eventsBasedObject={props.eventsBasedObject}
-                eventsBasedObjectVariant={props.eventsBasedObjectVariant}
-                getContentAABB={
-                  editorRef.current
-                    ? editorRef.current.getContentAABB
-                    : () => null
-                }
-                onEventsBasedObjectChildrenEdited={
-                  props.onEventsBasedObjectChildrenEdited
-                }
-              />
-            )}
-          </I18n>
-        ),
-      },
       'layers-list': {
         type: 'secondary',
         title: t`Layers`,
@@ -599,29 +682,43 @@ const MosaicEditorsDisplay: React.ComponentType<{
       },
     };
 
+    const defaultMosaicNode = getDefaultEditorMosaicNode(
+      SCENE_EDITOR_MOSAIC_LAYOUT_KEY
+    );
+    const sanitizedDefaultMosaicNode = defaultMosaicNode
+      ? removeEditorFromLayout(defaultMosaicNode, 'properties')
+      : null;
+
     return (
-      <EditorMosaic
-        // $FlowFixMe[incompatible-type]
-        editors={editors}
-        centralNodeId="instances-editor"
-        initialNodes={
-          // $FlowFixMe[incompatible-type]
-          getDefaultEditorMosaicNode(SCENE_EDITOR_MOSAIC_LAYOUT_KEY) ||
-          initialMosaicEditorNodes
-        }
-        isTransparent={gameEditorMode === 'embedded-game'}
-        onDragOrResizedStarted={() => {
-          preventGameFramePointerEvents(true);
-        }}
-        onDragOrResizedEnded={() => {
-          preventGameFramePointerEvents(false);
-        }}
-        onOpenedEditorsChanged={props.onOpenedEditorsChanged}
-        onPersistNodes={node =>
-          setDefaultEditorMosaicNode(SCENE_EDITOR_MOSAIC_LAYOUT_KEY, node)
-        }
-        ref={editorMosaicRef}
-      />
+      <div style={styles.container}>
+        <div style={styles.mosaicContainer}>
+          <EditorMosaic
+            // $FlowFixMe[incompatible-type]
+            editors={editors}
+            centralNodeId="instances-editor"
+            initialNodes={
+              sanitizedDefaultMosaicNode ||
+              // $FlowFixMe[incompatible-type]
+              initialMosaicEditorNodes
+            }
+            isTransparent={gameEditorMode === 'embedded-game'}
+            onDragOrResizedStarted={() => {
+              preventGameFramePointerEvents(true);
+            }}
+            onDragOrResizedEnded={() => {
+              preventGameFramePointerEvents(false);
+            }}
+            onOpenedEditorsChanged={props.onOpenedEditorsChanged}
+            onPersistNodes={node =>
+              setDefaultEditorMosaicNode(SCENE_EDITOR_MOSAIC_LAYOUT_KEY, node)
+            }
+            ref={editorMosaicRef}
+          />
+        </div>
+        <div className="scene-editor-inspector-panel" style={styles.inspectorContainer}>
+          {renderInspectorPanel()}
+        </div>
+      </div>
     );
   }
 );
