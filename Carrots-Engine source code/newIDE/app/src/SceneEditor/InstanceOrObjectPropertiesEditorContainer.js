@@ -22,7 +22,17 @@ export const styles = {
     display: 'flex',
     flex: 1,
     minWidth: 0,
+    minHeight: 0,
     flexDirection: 'column',
+    backgroundColor: '#111827',
+    color: '#E5E7EB',
+    borderRadius: 0,
+    border: 'none',
+  },
+  emptyMessage: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    lineHeight: '20px',
   },
 };
 
@@ -161,7 +171,12 @@ export const InstanceOrObjectPropertiesEditorContainer: React.ComponentType<{
     } = props;
 
     return (
-      <Paper background="dark" square style={styles.paper}>
+      <Paper
+        background="dark"
+        square
+        style={styles.paper}
+        id="scene-editor-inspector-root-paper"
+      >
         {!!instances.length && lastSelectionType === 'instance' ? (
           <CompactInstancePropertiesEditor
             instances={instances}
@@ -237,11 +252,8 @@ export const InstanceOrObjectPropertiesEditorContainer: React.ComponentType<{
             i18n={i18n}
           />
         ) : (
-          <EmptyMessage>
-            <Trans>
-              Click on an instance on the canvas or an object in the list to
-              display their properties.
-            </Trans>
+          <EmptyMessage messageStyle={styles.emptyMessage}>
+            <Trans>Select an object to view its properties</Trans>
           </EmptyMessage>
         )}
       </Paper>
