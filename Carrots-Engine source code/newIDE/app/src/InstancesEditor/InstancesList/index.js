@@ -50,6 +50,39 @@ type InstanceTreeItem = {|
   label?: React.Node,
 |};
 
+const setParentPersistentUuidIfSupported = (
+  instance: gdInitialInstance,
+  parentPersistentUuid: string
+) => {
+  // $FlowFixMe[prop-missing]
+  if (typeof instance.setParentPersistentUuid === 'function') {
+    // $FlowFixMe[prop-missing]
+    instance.setParentPersistentUuid(parentPersistentUuid);
+  }
+};
+
+const setLocalScaleXIfSupported = (
+  instance: gdInitialInstance,
+  value: number
+) => {
+  // $FlowFixMe[prop-missing]
+  if (typeof instance.setLocalScaleX === 'function') {
+    // $FlowFixMe[prop-missing]
+    instance.setLocalScaleX(value);
+  }
+};
+
+const setLocalScaleYIfSupported = (
+  instance: gdInitialInstance,
+  value: number
+) => {
+  // $FlowFixMe[prop-missing]
+  if (typeof instance.setLocalScaleY === 'function') {
+    // $FlowFixMe[prop-missing]
+    instance.setLocalScaleY(value);
+  }
+};
+
 const styles = {
   container: {
     flex: 1,
@@ -301,7 +334,7 @@ const InstancesList = (props: Props): React.Node => {
             } else {
               applyLocalToWorld(instance);
             }
-            instance.setParentPersistentUuid('');
+            setParentPersistentUuidIfSupported(instance, '');
             onInstancesModified([instance]);
           }}
         >
@@ -439,17 +472,23 @@ const InstancesList = (props: Props): React.Node => {
                 instancesIndexForMove.instancesByPersistentUuid
               );
               if (parentWorldScaleX !== 0)
-                instance.setLocalScaleX(worldScaleX / parentWorldScaleX);
-              else instance.setLocalScaleX(worldScaleX);
+                setLocalScaleXIfSupported(
+                  instance,
+                  worldScaleX / parentWorldScaleX
+                );
+              else setLocalScaleXIfSupported(instance, worldScaleX);
               if (parentWorldScaleY !== 0)
-                instance.setLocalScaleY(worldScaleY / parentWorldScaleY);
-              else instance.setLocalScaleY(worldScaleY);
+                setLocalScaleYIfSupported(
+                  instance,
+                  worldScaleY / parentWorldScaleY
+                );
+              else setLocalScaleYIfSupported(instance, worldScaleY);
             } else {
-              instance.setLocalScaleX(worldScaleX);
-              instance.setLocalScaleY(worldScaleY);
+              setLocalScaleXIfSupported(instance, worldScaleX);
+              setLocalScaleYIfSupported(instance, worldScaleY);
             }
           }
-          instance.setParentPersistentUuid(parentPersistentUuid);
+          setParentPersistentUuidIfSupported(instance, parentPersistentUuid);
           if (!keepWorld) {
             applyParentTransformFromLocal(
               instance,
@@ -461,7 +500,7 @@ const InstancesList = (props: Props): React.Node => {
           if (keepWorld) {
             setLocalToWorld(instance, worldScaleX, worldScaleY);
           }
-          instance.setParentPersistentUuid(parentPersistentUuid);
+          setParentPersistentUuidIfSupported(instance, parentPersistentUuid);
           if (!keepWorld) {
             applyLocalToWorld(instance);
           }

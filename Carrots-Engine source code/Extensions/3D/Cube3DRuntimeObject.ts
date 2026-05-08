@@ -138,8 +138,14 @@ namespace gdjs {
       ];
 
       this._tint = objectData.content.tint || '255;255;255';
-      this._isCastingShadow = objectData.content.isCastingShadow || false;
-      this._isReceivingShadow = objectData.content.isReceivingShadow || false;
+      this._isCastingShadow =
+        objectData.content.isCastingShadow !== undefined
+          ? !!objectData.content.isCastingShadow
+          : true;
+      this._isReceivingShadow =
+        objectData.content.isReceivingShadow !== undefined
+          ? !!objectData.content.isReceivingShadow
+          : true;
 
       this._materialType = this._convertMaterialType(
         objectData.content.materialType
@@ -575,12 +581,20 @@ namespace gdjs {
       this._materialType = newMaterialType;
       this._renderer._updateMaterials();
     }
-    updateShadowCasting(value: boolean) {
-      this._isCastingShadow = value;
+    updateShadowCasting(value: boolean | undefined) {
+      const normalizedValue = value !== false;
+      if (this._isCastingShadow === normalizedValue) {
+        return;
+      }
+      this._isCastingShadow = normalizedValue;
       this._renderer.updateShadowCasting();
     }
-    updateShadowReceiving(value: boolean) {
-      this._isReceivingShadow = value;
+    updateShadowReceiving(value: boolean | undefined) {
+      const normalizedValue = value !== false;
+      if (this._isReceivingShadow === normalizedValue) {
+        return;
+      }
+      this._isReceivingShadow = normalizedValue;
       this._renderer.updateShadowReceiving();
     }
   }

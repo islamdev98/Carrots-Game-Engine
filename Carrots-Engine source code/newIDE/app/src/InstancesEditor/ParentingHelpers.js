@@ -119,6 +119,84 @@ const getLocalScaleY = (instance: gdInitialInstance): number =>
   // $FlowFixMe[prop-missing]
   typeof instance.getLocalScaleY === 'function' ? instance.getLocalScaleY() : 1;
 
+const getLocalX = (instance: gdInitialInstance): number =>
+  // $FlowFixMe[prop-missing]
+  typeof instance.getLocalX === 'function' ? instance.getLocalX() : instance.getX();
+
+const getLocalY = (instance: gdInitialInstance): number =>
+  // $FlowFixMe[prop-missing]
+  typeof instance.getLocalY === 'function' ? instance.getLocalY() : instance.getY();
+
+const getLocalZ = (instance: gdInitialInstance): number =>
+  // $FlowFixMe[prop-missing]
+  typeof instance.getLocalZ === 'function' ? instance.getLocalZ() : instance.getZ();
+
+const getLocalAngle = (instance: gdInitialInstance): number =>
+  // $FlowFixMe[prop-missing]
+  typeof instance.getLocalAngle === 'function'
+    ? instance.getLocalAngle()
+    : instance.getAngle();
+
+const getLocalRotationX = (instance: gdInitialInstance): number =>
+  // $FlowFixMe[prop-missing]
+  typeof instance.getLocalRotationX === 'function'
+    ? instance.getLocalRotationX()
+    : instance.getRotationX();
+
+const getLocalRotationY = (instance: gdInitialInstance): number =>
+  // $FlowFixMe[prop-missing]
+  typeof instance.getLocalRotationY === 'function'
+    ? instance.getLocalRotationY()
+    : instance.getRotationY();
+
+const setLocalX = (instance: gdInitialInstance, value: number) => {
+  // $FlowFixMe[prop-missing]
+  if (typeof instance.setLocalX === 'function') {
+    // $FlowFixMe[prop-missing]
+    instance.setLocalX(value);
+  }
+};
+
+const setLocalY = (instance: gdInitialInstance, value: number) => {
+  // $FlowFixMe[prop-missing]
+  if (typeof instance.setLocalY === 'function') {
+    // $FlowFixMe[prop-missing]
+    instance.setLocalY(value);
+  }
+};
+
+const setLocalZ = (instance: gdInitialInstance, value: number) => {
+  // $FlowFixMe[prop-missing]
+  if (typeof instance.setLocalZ === 'function') {
+    // $FlowFixMe[prop-missing]
+    instance.setLocalZ(value);
+  }
+};
+
+const setLocalAngle = (instance: gdInitialInstance, value: number) => {
+  // $FlowFixMe[prop-missing]
+  if (typeof instance.setLocalAngle === 'function') {
+    // $FlowFixMe[prop-missing]
+    instance.setLocalAngle(value);
+  }
+};
+
+const setLocalRotationX = (instance: gdInitialInstance, value: number) => {
+  // $FlowFixMe[prop-missing]
+  if (typeof instance.setLocalRotationX === 'function') {
+    // $FlowFixMe[prop-missing]
+    instance.setLocalRotationX(value);
+  }
+};
+
+const setLocalRotationY = (instance: gdInitialInstance, value: number) => {
+  // $FlowFixMe[prop-missing]
+  if (typeof instance.setLocalRotationY === 'function') {
+    // $FlowFixMe[prop-missing]
+    instance.setLocalRotationY(value);
+  }
+};
+
 const setLocalScaleX = (instance: gdInitialInstance, value: number) => {
   // $FlowFixMe[prop-missing]
   if (typeof instance.setLocalScaleX === 'function') {
@@ -202,12 +280,12 @@ export const setLocalToWorld = (
   worldScaleX?: number,
   worldScaleY?: number
 ) => {
-  instance.setLocalX(instance.getX());
-  instance.setLocalY(instance.getY());
-  instance.setLocalZ(instance.getZ());
-  instance.setLocalAngle(instance.getAngle());
-  instance.setLocalRotationX(instance.getRotationX());
-  instance.setLocalRotationY(instance.getRotationY());
+  setLocalX(instance, instance.getX());
+  setLocalY(instance, instance.getY());
+  setLocalZ(instance, instance.getZ());
+  setLocalAngle(instance, instance.getAngle());
+  setLocalRotationX(instance, instance.getRotationX());
+  setLocalRotationY(instance, instance.getRotationY());
   setLocalScaleX(
     instance,
     worldScaleX !== undefined ? worldScaleX : getLocalScaleX(instance)
@@ -219,12 +297,12 @@ export const setLocalToWorld = (
 };
 
 export const applyLocalToWorld = (instance: gdInitialInstance) => {
-  instance.setX(instance.getLocalX());
-  instance.setY(instance.getLocalY());
-  instance.setZ(instance.getLocalZ());
-  instance.setAngle(instance.getLocalAngle());
-  instance.setRotationX(instance.getLocalRotationX());
-  instance.setRotationY(instance.getLocalRotationY());
+  instance.setX(getLocalX(instance));
+  instance.setY(getLocalY(instance));
+  instance.setZ(getLocalZ(instance));
+  instance.setAngle(getLocalAngle(instance));
+  instance.setRotationX(getLocalRotationX(instance));
+  instance.setRotationY(getLocalRotationY(instance));
 };
 
 export const recomputeLocalFromWorld = (
@@ -286,18 +364,18 @@ export const recomputeLocalFromWorld = (
     }
   }
 
-  instance.setLocalX(dx);
-  instance.setLocalY(dy);
-  instance.setLocalZ(dz);
+  setLocalX(instance, dx);
+  setLocalY(instance, dy);
+  setLocalZ(instance, dz);
 
   if (inheritRotation) {
-    instance.setLocalAngle(instance.getAngle() - parent.getAngle());
-    instance.setLocalRotationX(instance.getRotationX() - parent.getRotationX());
-    instance.setLocalRotationY(instance.getRotationY() - parent.getRotationY());
+    setLocalAngle(instance, instance.getAngle() - parent.getAngle());
+    setLocalRotationX(instance, instance.getRotationX() - parent.getRotationX());
+    setLocalRotationY(instance, instance.getRotationY() - parent.getRotationY());
   } else {
-    instance.setLocalAngle(instance.getAngle());
-    instance.setLocalRotationX(instance.getRotationX());
-    instance.setLocalRotationY(instance.getRotationY());
+    setLocalAngle(instance, instance.getAngle());
+    setLocalRotationX(instance, instance.getRotationX());
+    setLocalRotationY(instance, instance.getRotationY());
   }
 };
 
@@ -309,9 +387,9 @@ export const applyParentTransformFromLocal = (
   const inheritRotation = getInheritRotation(instance);
   const inheritScale = getInheritScale(instance);
 
-  let x = instance.getLocalX();
-  let y = instance.getLocalY();
-  let z = instance.getLocalZ();
+  let x = getLocalX(instance);
+  let y = getLocalY(instance);
+  let z = getLocalZ(instance);
 
   if (inheritScale) {
     const parentScaleX = getInstanceWorldScaleX(
@@ -359,9 +437,9 @@ export const applyParentTransformFromLocal = (
   const worldY = parent.getY() + y;
   const worldZ = parent.getZ() + z;
 
-  let worldAngle = instance.getLocalAngle();
-  let worldRotationX = instance.getLocalRotationX();
-  let worldRotationY = instance.getLocalRotationY();
+  let worldAngle = getLocalAngle(instance);
+  let worldRotationX = getLocalRotationX(instance);
+  let worldRotationY = getLocalRotationY(instance);
   if (inheritRotation) {
     worldAngle += parent.getAngle();
     worldRotationX += parent.getRotationX();

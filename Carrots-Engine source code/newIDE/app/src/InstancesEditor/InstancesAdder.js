@@ -81,7 +81,11 @@ export const addSerializedInstances = ({
           parentPersistentUuid
         );
         if (newParentPersistentUuid) {
-          instance.setParentPersistentUuid(newParentPersistentUuid);
+          // $FlowFixMe[prop-missing]
+          if (typeof instance.setParentPersistentUuid === 'function') {
+            // $FlowFixMe[prop-missing]
+            instance.setParentPersistentUuid(newParentPersistentUuid);
+          }
         }
       }
     });

@@ -1025,12 +1025,22 @@ namespace gdjs {
                 this._cascadeRanges[cascadeIndex].far -
                   this._cascadeRanges[cascadeIndex].near
               );
-              // Tight depth range improves shadow precision and reduces acne.
+              const cascadeHalfExtent = cascadeFrustumSize * 0.5;
+              const cascadeHalfDepth = rangeDepth * 0.5;
+              // Fit the full cascade volume in light depth, so shadows don't disappear
+              // on objects near the shadow frustum edges.
+              const cascadeBoundingRadius = Math.sqrt(
+                cascadeHalfExtent * cascadeHalfExtent * 2 +
+                  cascadeHalfDepth * cascadeHalfDepth
+              );
+              const depthPadding = Math.max(
+                64,
+                cascadeFrustumSize * 0.1,
+                rangeDepth * 0.2
+              );
               const depthExtent = Math.max(
-                96,
-                rangeDepth * 0.75 +
-                  cascadeFrustumSize * 0.32 +
-                  safeDistanceFromCamera * 0.05
+                128,
+                cascadeBoundingRadius + depthPadding
               );
 
               light.shadow.camera.near = Math.max(
@@ -1577,6 +1587,29 @@ namespace gdjs {
 
             if (!this._staticAnchorInitialized) {
               this._staticAnchorInitialized = true;
+              this._staticAnchorX = cameraX;
+              this._staticAnchorY = cameraY;
+              this._staticAnchorZ = cameraZ;
+            }
+
+            // Smart fallback for fixed-world shadows:
+            // keep anchors stable most frames, but re-center when the camera
+            // drifts too far from the static anchor so shadows keep covering
+            // nearby objects.
+            const deltaX = cameraX - this._staticAnchorX;
+            const deltaY = cameraY - this._staticAnchorY;
+            const deltaZ = cameraZ - this._staticAnchorZ;
+            const anchorDrift = Math.sqrt(
+              deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ
+            );
+            const recenterDistance = Math.max(
+              96,
+              Math.min(
+                this._maxShadowDistance * 0.45,
+                this._frustumSize * 0.38 + this._distanceFromCamera * 0.12
+              )
+            );
+            if (anchorDrift > recenterDistance) {
               this._staticAnchorX = cameraX;
               this._staticAnchorY = cameraY;
               this._staticAnchorZ = cameraZ;

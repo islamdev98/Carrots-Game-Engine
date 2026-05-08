@@ -598,8 +598,16 @@ namespace gdjs {
       this._crossfadeDuration = objectData.content.crossfadeDuration || 0;
       this._loadAnimatorGraph(objectData);
 
-      this.setIsCastingShadow(objectData.content.isCastingShadow);
-      this.setIsReceivingShadow(objectData.content.isReceivingShadow);
+      this.setIsCastingShadow(
+        objectData.content.isCastingShadow !== undefined
+          ? objectData.content.isCastingShadow
+          : true
+      );
+      this.setIsReceivingShadow(
+        objectData.content.isReceivingShadow !== undefined
+          ? objectData.content.isReceivingShadow
+          : true
+      );
       this.onModelChanged(objectData);
       this._loadIKConfiguration(objectData);
 
@@ -1175,13 +1183,21 @@ namespace gdjs {
       return this._renderer.hasAnimationEnded();
     }
 
-    setIsCastingShadow(value: boolean): void {
-      this._isCastingShadow = value;
+    setIsCastingShadow(value: boolean | undefined): void {
+      const normalizedValue = value !== false;
+      if (this._isCastingShadow === normalizedValue) {
+        return;
+      }
+      this._isCastingShadow = normalizedValue;
       this._renderer._updateShadow();
     }
 
-    setIsReceivingShadow(value: boolean): void {
-      this._isReceivingShadow = value;
+    setIsReceivingShadow(value: boolean | undefined): void {
+      const normalizedValue = value !== false;
+      if (this._isReceivingShadow === normalizedValue) {
+        return;
+      }
+      this._isReceivingShadow = normalizedValue;
       this._renderer._updateShadow();
     }
 

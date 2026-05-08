@@ -695,32 +695,80 @@ export default class SceneEditor extends React.Component<Props, State> {
       instance.setDefaultHeight(defaultHeight || 0);
       instance.setDefaultDepth(defaultDepth || 0);
       if (parentPersistentUuid !== undefined) {
-        instance.setParentPersistentUuid(parentPersistentUuid || '');
-        instance.setInheritRotation(inheritRotation !== false);
-        instance.setInheritScale(inheritScale !== false);
+        // $FlowFixMe[prop-missing]
+        if (typeof instance.setParentPersistentUuid === 'function') {
+          // $FlowFixMe[prop-missing]
+          instance.setParentPersistentUuid(parentPersistentUuid || '');
+        }
+        // $FlowFixMe[prop-missing]
+        if (typeof instance.setInheritRotation === 'function') {
+          // $FlowFixMe[prop-missing]
+          instance.setInheritRotation(inheritRotation !== false);
+        }
+        // $FlowFixMe[prop-missing]
+        if (typeof instance.setInheritScale === 'function') {
+          // $FlowFixMe[prop-missing]
+          instance.setInheritScale(inheritScale !== false);
+        }
       }
-      if (localX !== undefined) {
+      // $FlowFixMe[prop-missing]
+      if (localX !== undefined && typeof instance.setLocalX === 'function') {
+        // $FlowFixMe[prop-missing]
         instance.setLocalX(localX);
       }
-      if (localY !== undefined) {
+      // $FlowFixMe[prop-missing]
+      if (localY !== undefined && typeof instance.setLocalY === 'function') {
+        // $FlowFixMe[prop-missing]
         instance.setLocalY(localY);
       }
-      if (localZ !== undefined) {
+      // $FlowFixMe[prop-missing]
+      if (localZ !== undefined && typeof instance.setLocalZ === 'function') {
+        // $FlowFixMe[prop-missing]
         instance.setLocalZ(localZ);
       }
-      if (localAngle !== undefined) {
+      // $FlowFixMe[prop-missing]
+      if (
+        localAngle !== undefined &&
+        // $FlowFixMe[prop-missing]
+        typeof instance.setLocalAngle === 'function'
+      ) {
+        // $FlowFixMe[prop-missing]
         instance.setLocalAngle(localAngle);
       }
-      if (localRotationX !== undefined) {
+      // $FlowFixMe[prop-missing]
+      if (
+        localRotationX !== undefined &&
+        // $FlowFixMe[prop-missing]
+        typeof instance.setLocalRotationX === 'function'
+      ) {
+        // $FlowFixMe[prop-missing]
         instance.setLocalRotationX(localRotationX);
       }
-      if (localRotationY !== undefined) {
+      // $FlowFixMe[prop-missing]
+      if (
+        localRotationY !== undefined &&
+        // $FlowFixMe[prop-missing]
+        typeof instance.setLocalRotationY === 'function'
+      ) {
+        // $FlowFixMe[prop-missing]
         instance.setLocalRotationY(localRotationY);
       }
-      if (localScaleX !== undefined) {
+      // $FlowFixMe[prop-missing]
+      if (
+        localScaleX !== undefined &&
+        // $FlowFixMe[prop-missing]
+        typeof instance.setLocalScaleX === 'function'
+      ) {
+        // $FlowFixMe[prop-missing]
         instance.setLocalScaleX(localScaleX);
       }
-      if (localScaleY !== undefined) {
+      // $FlowFixMe[prop-missing]
+      if (
+        localScaleY !== undefined &&
+        // $FlowFixMe[prop-missing]
+        typeof instance.setLocalScaleY === 'function'
+      ) {
+        // $FlowFixMe[prop-missing]
         instance.setLocalScaleY(localScaleY);
       }
 
