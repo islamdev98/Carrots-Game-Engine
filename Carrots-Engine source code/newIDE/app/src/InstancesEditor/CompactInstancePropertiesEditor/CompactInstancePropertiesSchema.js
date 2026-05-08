@@ -78,35 +78,6 @@ const updateLocalAndChildren = (
   applyParentTransformToDescendants(instance, instancesIndex);
 };
 
-const AXIS_COLOR_X = '#EF4444';
-const AXIS_COLOR_Y = '#22C55E';
-const AXIS_COLOR_Z = '#3B82F6';
-
-const getAxisColor = (axis: 'x' | 'y' | 'z'): string => {
-  if (axis === 'x') return AXIS_COLOR_X;
-  if (axis === 'y') return AXIS_COLOR_Y;
-  return AXIS_COLOR_Z;
-};
-
-const getAxisLetterIcon = (axis: 'x' | 'y' | 'z') => {
-  const axisColor = getAxisColor(axis);
-  // $FlowFixMe[missing-local-annot]
-  return className =>
-    axis === 'x' ? (
-      <LetterX className={className} style={{ color: axisColor }} />
-    ) : axis === 'y' ? (
-      <LetterY className={className} style={{ color: axisColor }} />
-    ) : (
-      <LetterZ className={className} style={{ color: axisColor }} />
-    );
-};
-
-const getDegreeValueFromDisplayedValue = (displayedValue: string): string =>
-  displayedValue.replace(/°/g, '').trim();
-
-const getDisplayedDegreeValueFromValue = (value: string): string =>
-  `${value}°`;
-
 const getEditObjectButton = ({
   i18n,
   onEditObject,
@@ -1004,277 +975,6 @@ export const makeSchema = ({
       ? instance.getCustomDepth()
       : onGetInstanceSize(instance)[2];
 
-  const getDefaultWidth = (instance: gdInitialInstance) =>
-    onGetInstanceSize(instance)[0] || 1;
-  const getDefaultHeight = (instance: gdInitialInstance) =>
-    onGetInstanceSize(instance)[1] || 1;
-  const getDefaultDepth = (instance: gdInitialInstance) =>
-    onGetInstanceSize(instance)[2] || 1;
-
-  const getDimensionFromAxis = (
-    instance: gdInitialInstance,
-    axis: 'x' | 'y' | 'z'
-  ): number => {
-    if (axis === 'x') return getInstanceWidth(instance);
-    if (axis === 'y') return getInstanceHeight(instance);
-    return getInstanceDepth(instance);
-  };
-
-  const setDimensionFromAxis = (
-    instance: gdInitialInstance,
-    axis: 'x' | 'y' | 'z',
-    value: number
-  ) => {
-    const safeValue = Math.max(value, 0);
-    const shouldKeepRatio = instance.shouldKeepRatio();
-
-    if (axis === 'x') {
-      if (shouldKeepRatio) {
-        const initialWidth = getInstanceWidth(instance) || 1;
-        instance.setCustomWidth(safeValue);
-        instance.setCustomHeight(
-          applyRatio({
-            oldReferenceValue: initialWidth,
-            newReferenceValue: safeValue,
-            valueToApplyTo: getInstanceHeight(instance),
-          })
-        );
-        instance.setCustomDepth(
-          applyRatio({
-            oldReferenceValue: initialWidth,
-            newReferenceValue: safeValue,
-            valueToApplyTo: getInstanceDepth(instance),
-          })
-        );
-      } else {
-        instance.setCustomWidth(safeValue);
-        instance.setCustomHeight(getInstanceHeight(instance));
-        instance.setCustomDepth(getInstanceDepth(instance));
-      }
-    } else if (axis === 'y') {
-      if (shouldKeepRatio) {
-        const initialHeight = getInstanceHeight(instance) || 1;
-        instance.setCustomWidth(
-          applyRatio({
-            oldReferenceValue: initialHeight,
-            newReferenceValue: safeValue,
-            valueToApplyTo: getInstanceWidth(instance),
-          })
-        );
-        instance.setCustomHeight(safeValue);
-        instance.setCustomDepth(
-          applyRatio({
-            oldReferenceValue: initialHeight,
-            newReferenceValue: safeValue,
-            valueToApplyTo: getInstanceDepth(instance),
-          })
-        );
-      } else {
-        instance.setCustomWidth(getInstanceWidth(instance));
-        instance.setCustomHeight(safeValue);
-        instance.setCustomDepth(getInstanceDepth(instance));
-      }
-    } else {
-      if (shouldKeepRatio) {
-        const initialDepth = getInstanceDepth(instance) || 1;
-        instance.setCustomWidth(
-          applyRatio({
-            oldReferenceValue: initialDepth,
-            newReferenceValue: safeValue,
-            valueToApplyTo: getInstanceWidth(instance),
-          })
-        );
-        instance.setCustomHeight(
-          applyRatio({
-            oldReferenceValue: initialDepth,
-            newReferenceValue: safeValue,
-            valueToApplyTo: getInstanceHeight(instance),
-          })
-        );
-        instance.setCustomDepth(safeValue);
-      } else {
-        instance.setCustomWidth(getInstanceWidth(instance));
-        instance.setCustomHeight(getInstanceHeight(instance));
-        instance.setCustomDepth(safeValue);
-      }
-    }
-
-    instance.setHasCustomSize(true);
-    instance.setHasCustomDepth(true);
-  };
-
-  const getDefaultDimensionFromAxis = (
-    instance: gdInitialInstance,
-    axis: 'x' | 'y' | 'z'
-  ): number => {
-    if (axis === 'x') return getDefaultWidth(instance);
-    if (axis === 'y') return getDefaultHeight(instance);
-    return getDefaultDepth(instance);
-  };
-
-  const getAxisFlip = (instance: gdInitialInstance, axis: 'x' | 'y' | 'z') => {
-    if (axis === 'x') return instance.isFlippedX();
-    if (axis === 'y') return instance.isFlippedY();
-    return instance.isFlippedZ();
-  };
-
-  const setAxisFlip = (
-    instance: gdInitialInstance,
-    axis: 'x' | 'y' | 'z',
-    shouldFlip: boolean
-  ) => {
-    if (axis === 'x') instance.setFlippedX(shouldFlip);
-    else if (axis === 'y') instance.setFlippedY(shouldFlip);
-    else instance.setFlippedZ(shouldFlip);
-  };
-
-  const getScaleFromAxis = (
-    instance: gdInitialInstance,
-    axis: 'x' | 'y' | 'z'
-  ): number => {
-    const defaultValue = getDefaultDimensionFromAxis(instance, axis);
-    const dimension = getDimensionFromAxis(instance, axis);
-    const scale = dimension / (defaultValue || 1);
-    return getAxisFlip(instance, axis) ? -scale : scale;
-  };
-
-  const setScaleFromAxis = (
-    instance: gdInitialInstance,
-    axis: 'x' | 'y' | 'z',
-    newScale: number
-  ) => {
-    const normalizedScale = Number.isFinite(newScale) ? newScale : 1;
-    const absoluteScale = Math.abs(normalizedScale);
-    const defaultValue = getDefaultDimensionFromAxis(instance, axis);
-    setDimensionFromAxis(instance, axis, defaultValue * absoluteScale);
-    setAxisFlip(instance, axis, normalizedScale < 0);
-    forceUpdate();
-  };
-
-  const makeTransformRowTitle = (name: string, title: string) => ({
-    name,
-    title,
-    nonFieldType: 'title',
-    renderLeftIcon: () => null,
-  });
-
-  const basePositionXAndYFields = getXAndYFields({
-    i18n,
-    initialInstancesContainer,
-  });
-  const baseRotationXAndYFields = getRotationXAndRotationYFields({
-    i18n,
-    initialInstancesContainer,
-  });
-
-  const transformRows = [
-    {
-      name: 'Transform Position',
-      type: 'row',
-      preventWrap: true,
-      removeSpacers: true,
-      children: [
-        makeTransformRowTitle('Transform Position Label', i18n._(t`Position`)),
-        {
-          ...basePositionXAndYFields[0],
-          name: 'Transform Position X',
-          hideLabel: true,
-          renderLeftIcon: getAxisLetterIcon('x'),
-          getLabel: () => i18n._(t`X`),
-        },
-        {
-          ...basePositionXAndYFields[1],
-          name: 'Transform Position Y',
-          hideLabel: true,
-          renderLeftIcon: getAxisLetterIcon('y'),
-          getLabel: () => i18n._(t`Y`),
-        },
-        {
-          ...getZField({ i18n, initialInstancesContainer }),
-          name: 'Transform Position Z',
-          hideLabel: true,
-          renderLeftIcon: getAxisLetterIcon('z'),
-          getLabel: () => i18n._(t`Z`),
-        },
-      ],
-    },
-    {
-      name: 'Transform Rotation',
-      type: 'row',
-      preventWrap: true,
-      removeSpacers: true,
-      children: [
-        makeTransformRowTitle('Transform Rotation Label', i18n._(t`Rotation`)),
-        {
-          ...baseRotationXAndYFields[0],
-          name: 'Transform Rotation X',
-          hideLabel: true,
-          renderLeftIcon: getAxisLetterIcon('x'),
-          getLabel: () => i18n._(t`Rotation (X)`),
-          getValueFromDisplayedValue: getDegreeValueFromDisplayedValue,
-          getDisplayedValueFromValue: getDisplayedDegreeValueFromValue,
-        },
-        {
-          ...baseRotationXAndYFields[1],
-          name: 'Transform Rotation Y',
-          hideLabel: true,
-          renderLeftIcon: getAxisLetterIcon('y'),
-          getLabel: () => i18n._(t`Rotation (Y)`),
-          getValueFromDisplayedValue: getDegreeValueFromDisplayedValue,
-          getDisplayedValueFromValue: getDisplayedDegreeValueFromValue,
-        },
-        {
-          ...getRotationZField({ i18n, initialInstancesContainer }),
-          name: 'Transform Rotation Z',
-          hideLabel: true,
-          renderLeftIcon: getAxisLetterIcon('z'),
-          getLabel: () => i18n._(t`Rotation (Z)`),
-          getValueFromDisplayedValue: getDegreeValueFromDisplayedValue,
-          getDisplayedValueFromValue: getDisplayedDegreeValueFromValue,
-        },
-      ],
-    },
-    {
-      name: 'Transform Scale',
-      type: 'row',
-      preventWrap: true,
-      removeSpacers: true,
-      children: [
-        makeTransformRowTitle('Transform Scale Label', i18n._(t`Scale`)),
-        {
-          name: 'Transform Scale X',
-          getLabel: () => i18n._(t`Scale (X)`),
-          hideLabel: true,
-          valueType: 'number',
-          getValue: (instance: gdInitialInstance) => getScaleFromAxis(instance, 'x'),
-          setValue: (instance: gdInitialInstance, newValue: number) =>
-            setScaleFromAxis(instance, 'x', newValue),
-          renderLeftIcon: getAxisLetterIcon('x'),
-        },
-        {
-          name: 'Transform Scale Y',
-          getLabel: () => i18n._(t`Scale (Y)`),
-          hideLabel: true,
-          valueType: 'number',
-          getValue: (instance: gdInitialInstance) => getScaleFromAxis(instance, 'y'),
-          setValue: (instance: gdInitialInstance, newValue: number) =>
-            setScaleFromAxis(instance, 'y', newValue),
-          renderLeftIcon: getAxisLetterIcon('y'),
-        },
-        {
-          name: 'Transform Scale Z',
-          getLabel: () => i18n._(t`Scale (Z)`),
-          hideLabel: true,
-          valueType: 'number',
-          getValue: (instance: gdInitialInstance) => getScaleFromAxis(instance, 'z'),
-          setValue: (instance: gdInitialInstance, newValue: number) =>
-            setScaleFromAxis(instance, 'z', newValue),
-          renderLeftIcon: getAxisLetterIcon('z'),
-        },
-      ],
-    },
-  ];
-
   if (is3DInstance) {
     // $FlowFixMe[incompatible-type]
     return [
@@ -1300,7 +1000,16 @@ export const makeSchema = ({
           getInheritScaleField({ i18n, initialInstancesContainer }),
         ],
       },
-      ...transformRows,
+      {
+        name: 'Position',
+        type: 'row',
+        preventWrap: true,
+        removeSpacers: true,
+        children: [
+          ...getXAndYFields({ i18n, initialInstancesContainer }),
+          getZField({ i18n, initialInstancesContainer }),
+        ],
+      },
       {
         name: 'Size',
         type: 'row',
@@ -1366,6 +1075,19 @@ export const makeSchema = ({
           ? [getFlippableButtons({ i18n, canFlipZ: canBeFlippedZ })]
           : [],
       },
+      {
+        name: 'Rotation X and Y',
+        type: 'row',
+        preventWrap: true,
+        removeSpacers: true,
+        children: [
+          ...getRotationXAndRotationYFields({
+            i18n,
+            initialInstancesContainer,
+          }),
+          getRotationZField({ i18n, initialInstancesContainer }),
+        ],
+      },
     ].filter(Boolean);
   }
 
@@ -1393,7 +1115,13 @@ export const makeSchema = ({
         getInheritScaleField({ i18n, initialInstancesContainer }),
       ],
     },
-    ...transformRows,
+    {
+      name: 'Position',
+      type: 'row',
+      preventWrap: true,
+      removeSpacers: true,
+      children: getXAndYFields({ i18n, initialInstancesContainer }),
+    },
     getZOrderField({ i18n }),
     {
       name: 'Size',
@@ -1452,6 +1180,13 @@ export const makeSchema = ({
       children: canBeFlippedXY
         ? [getFlippableButtons({ i18n, canFlipZ: canBeFlippedZ })]
         : [],
+    },
+    {
+      name: 'Rotation Z',
+      type: 'row',
+      preventWrap: true,
+      removeSpacers: true,
+      children: [getRotationZField({ i18n, initialInstancesContainer })],
     },
   ].filter(Boolean);
 };
