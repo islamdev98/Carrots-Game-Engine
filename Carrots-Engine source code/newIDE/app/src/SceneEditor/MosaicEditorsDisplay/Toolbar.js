@@ -319,10 +319,13 @@ const Toolbar: React.ComponentType<Props> = React.memo<Props>(function Toolbar(
           size="small"
           color="default"
           id={OPEN_PROPERTIES_PANEL_BUTTON_ID}
-          onClick={() => {}}
-          selected
-          disabled
-          tooltip={t`Inspector is always visible`}
+          onClick={props.toggleProperties}
+          selected={props.isPropertiesShown}
+          tooltip={
+            props.isPropertiesShown
+              ? t`Close Inspector Panel`
+              : t`Open Inspector Panel`
+          }
         >
           <EditIcon />
         </IconButton>
