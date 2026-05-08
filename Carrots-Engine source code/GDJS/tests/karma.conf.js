@@ -181,6 +181,7 @@ module.exports = function (config) {
       './newIDE/app/resources/GDJS/Runtime/Extensions/Spine/managers/*.js',
       './newIDE/app/resources/GDJS/Runtime/Extensions/SaveState/SaveStateTools.js',
       './newIDE/app/resources/GDJS/Runtime/Extensions/SaveState/SaveConfigurationRuntimeBehavior.js',
+      './newIDE/app/resources/GDJS/Runtime/Extensions/Skew/skewruntimebehavior.js',
 
       // Test extensions:
       './GDJS/tests/tests/Extensions/**.js',

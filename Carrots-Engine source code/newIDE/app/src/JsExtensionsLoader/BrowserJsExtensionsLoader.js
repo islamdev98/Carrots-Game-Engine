@@ -215,6 +215,13 @@ const jsExtensions = [
     objectsRenderingServiceModules: {},
   },
   {
+    name: 'Skew',
+    // $FlowFixMe[incompatible-type] - this path is ignored for Flow.
+    // $FlowFixMe[cannot-resolve-module]
+    extensionModule: require('GDJS-for-web-app-only/Runtime/Extensions/Skew/JsExtension.js'),
+    objectsRenderingServiceModules: {},
+  },
+  {
     name: 'TextInput',
     // $FlowFixMe[incompatible-type] - this path is ignored for Flow.
     // $FlowFixMe[cannot-resolve-module]
