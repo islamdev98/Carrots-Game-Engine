@@ -30,7 +30,10 @@ When `Auto terrain` is enabled while painting:
 
 Important behavior:
 
-- The selection must be at least `4x4`.
+- Best quality is with a `4x4` selection.
+- Smaller selections are now supported:
+  - `1x1`: all masks fallback to the same tile.
+  - `2x2` / `3x3`: missing masks are auto-filled from the closest available masks.
 - `Random` and `Auto terrain` are mutually exclusive in the editor UI.
 - If `Auto terrain` is enabled, random painting is disabled.
 
@@ -141,6 +144,7 @@ If terrain appears not to work:
 2. Confirm the active layer is the one you are painting/updating.
 3. Confirm your terrain input is mask order `0..15`.
 4. In editor mode, confirm the selected terrain pattern is at least `4x4`.
+4. For premium results, use a `4x4` pattern. Smaller patterns still work via smart fallback.
 5. Confirm your tile IDs exist in the current atlas/tile definitions.
 
 If random appears not to work:
@@ -152,6 +156,6 @@ If random appears not to work:
 ## 9. Quick Arabic Summary
 
 - `Auto terrain` فائدته إنه يوصل بلاطات الأرض تلقائيًا أثناء الرسم بدل ما تختار كل edge يدويًا.
-- لازم تختار باترن `4x4` في الـtileset عشان يمثل masks من `0` لـ`15`.
+- الأفضل تختار باترن `4x4`، لكن الآن حتى لو أصغر النظام بيكمل الباقي تلقائيًا بـ fallback ذكي.
 - في الـEvents هتستخدم Actions الخاصة بـ`Set terrain tile...` أو `Set random tile...`.
 - النظام الآن يقبل إدخال مرن، ويدعم fallback لو بعض الـmasks ناقصة.

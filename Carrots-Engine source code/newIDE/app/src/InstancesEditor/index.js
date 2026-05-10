@@ -1089,18 +1089,62 @@ export default class InstancesEditor extends Component<Props, State> {
         const bottomRightCorner = paintingSelection.coordinates[1];
         const selectionWidth = bottomRightCorner.x - topLeftCorner.x + 1;
         const selectionHeight = bottomRightCorner.y - topLeftCorner.y + 1;
-        if (selectionWidth < 4 || selectionHeight < 4) return null;
+        if (selectionWidth <= 0 || selectionHeight <= 0) return null;
 
         const tileByMask = new Array(16).fill(-1);
-        for (let maskY = 0; maskY < 4; maskY++) {
-          for (let maskX = 0; maskX < 4; maskX++) {
+        const validMaskIndexes = [];
+        const maxMaskWidth = Math.min(4, selectionWidth);
+        const maxMaskHeight = Math.min(4, selectionHeight);
+
+        for (let maskY = 0; maskY < maxMaskHeight; maskY++) {
+          for (let maskX = 0; maskX < maxMaskWidth; maskX++) {
+            const maskIndex = maskY * 4 + maskX;
             const tileId = getTileIdFromTileCoordinates({
               x: topLeftCorner.x + maskX,
               y: topLeftCorner.y + maskY,
             });
-            if (!hasTileDefinition(tileId)) return null;
-            tileByMask[maskY * 4 + maskX] = tileId;
+            if (!hasTileDefinition(tileId)) continue;
+            tileByMask[maskIndex] = tileId;
+            validMaskIndexes.push(maskIndex);
           }
+        }
+
+        if (!validMaskIndexes.length) return null;
+
+        const getMaskBitDifferenceCount = (
+          sourceMask: number,
+          targetMask: number
+        ): number => {
+          const xorMask = (sourceMask ^ targetMask) & 0b1111;
+          return (
+            ((xorMask & 0b0001) !== 0 ? 1 : 0) +
+            ((xorMask & 0b0010) !== 0 ? 1 : 0) +
+            ((xorMask & 0b0100) !== 0 ? 1 : 0) +
+            ((xorMask & 0b1000) !== 0 ? 1 : 0)
+          );
+        };
+
+        for (let maskIndex = 0; maskIndex < 16; maskIndex++) {
+          if (hasTileDefinition(tileByMask[maskIndex])) continue;
+
+          let bestFallbackMaskIndex = validMaskIndexes[0];
+          let bestDistance = getMaskBitDifferenceCount(
+            maskIndex,
+            bestFallbackMaskIndex
+          );
+          for (let index = 1; index < validMaskIndexes.length; index++) {
+            const fallbackMaskIndex = validMaskIndexes[index];
+            const distance = getMaskBitDifferenceCount(
+              maskIndex,
+              fallbackMaskIndex
+            );
+            if (distance < bestDistance) {
+              bestDistance = distance;
+              bestFallbackMaskIndex = fallbackMaskIndex;
+            }
+          }
+
+          tileByMask[maskIndex] = tileByMask[bestFallbackMaskIndex];
         }
 
         return tileByMask;
