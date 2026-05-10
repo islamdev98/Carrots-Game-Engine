@@ -207,13 +207,20 @@ namespace gdjs {
 
     private _parseTileIdsList(
       value: string | undefined,
-      deduplicate: boolean = true
+      deduplicate: boolean = true,
+      options: { allowNegative?: boolean } = {}
     ): number[] {
       if (!value) return [];
+      const allowNegative = !!options.allowNegative;
       const parsedTileIds = value
-        .split(',')
+        .split(/[,\n\r;\t ]+/)
+        .map((idAsString) => idAsString.trim())
+        .filter((idAsString) => !!idAsString)
         .map((idAsString) => parseInt(idAsString.trim(), 10))
-        .filter((tileId) => Number.isFinite(tileId) && tileId >= 0)
+        .filter(
+          (tileId) =>
+            Number.isFinite(tileId) && (allowNegative || tileId >= 0)
+        )
         .map((tileId) => Math.floor(tileId));
       return deduplicate ? Array.from(new Set(parsedTileIds)) : parsedTileIds;
     }
@@ -1181,15 +1188,23 @@ namespace gdjs {
       return this._animatedGrassWindTileIdsRaw;
     }
 
-    private _pickRandomTileIdFromText(tileIdsAsText: string): integer {
+    private _getRandomTilePoolFromText(tileIdsAsText: string): integer[] {
       const tileMap = this._tileMap;
-      if (!tileMap) return -1;
-      const parsedTileIds = this._parseTileIdsList(tileIdsAsText, false)
+      if (!tileMap) return [];
+      return this._parseTileIdsList(tileIdsAsText, false)
         .map((tileId) => this._normalizeAnimatedTileId(tileId))
         .filter((tileId) => !!tileMap.getTileDefinition(tileId));
-      if (parsedTileIds.length === 0) return -1;
-      const randomIndex = gdjs.random(parsedTileIds.length - 1);
-      return parsedTileIds[randomIndex];
+    }
+
+    private _pickRandomTileIdFromPool(tileIdsPool: integer[]): integer {
+      if (tileIdsPool.length === 0) return -1;
+      const randomIndex = gdjs.random(tileIdsPool.length - 1);
+      return tileIdsPool[randomIndex];
+    }
+
+    private _pickRandomTileIdFromText(tileIdsAsText: string): integer {
+      const randomTilePool = this._getRandomTilePoolFromText(tileIdsAsText);
+      return this._pickRandomTileIdFromPool(randomTilePool);
     }
 
     setRandomTileAtPosition(tileIdsAsText: string, x: float, y: float): void {
@@ -1216,19 +1231,29 @@ namespace gdjs {
       endRowIndex: integer
     ): void {
       if (!this._tileMap) return;
+      const randomTilePool = this._getRandomTilePoolFromText(tileIdsAsText);
+      if (randomTilePool.length === 0) return;
       const minColumnIndex = Math.min(startColumnIndex, endColumnIndex);
       const maxColumnIndex = Math.max(startColumnIndex, endColumnIndex);
       const minRowIndex = Math.min(startRowIndex, endRowIndex);
       const maxRowIndex = Math.max(startRowIndex, endRowIndex);
       for (let columnIndex = minColumnIndex; columnIndex <= maxColumnIndex; columnIndex++) {
         for (let rowIndex = minRowIndex; rowIndex <= maxRowIndex; rowIndex++) {
-          this.setRandomTileAtGridCoordinates(
-            tileIdsAsText,
-            columnIndex,
-            rowIndex
-          );
+          const randomTileId = this._pickRandomTileIdFromPool(randomTilePool);
+          if (randomTileId < 0) continue;
+          this.setTileAtGridCoordinates(randomTileId, columnIndex, rowIndex);
         }
       }
+    }
+
+    private _countMaskBitDifferences(maskA: integer, maskB: integer): integer {
+      const xorMask = (maskA ^ maskB) & 0b1111;
+      return (
+        ((xorMask & 0b0001) !== 0 ? 1 : 0) +
+        ((xorMask & 0b0010) !== 0 ? 1 : 0) +
+        ((xorMask & 0b0100) !== 0 ? 1 : 0) +
+        ((xorMask & 0b1000) !== 0 ? 1 : 0)
+      );
     }
 
     private _getTerrainMaskTileIdsFromText(
@@ -1236,16 +1261,47 @@ namespace gdjs {
     ): integer[] | null {
       const tileMap = this._tileMap;
       if (!tileMap) return null;
-      const terrainMaskTileIds = this._parseTileIdsList(tileIdsAsText, false)
-        .slice(0, 16)
-        .map((tileId) => this._normalizeAnimatedTileId(tileId));
-      if (terrainMaskTileIds.length < 16) return null;
-      if (
-        !terrainMaskTileIds.every((tileId) => !!tileMap.getTileDefinition(tileId))
-      ) {
-        return null;
+      const parsedMaskTileIds = this._parseTileIdsList(tileIdsAsText, false, {
+        allowNegative: true,
+      });
+      if (parsedMaskTileIds.length === 0) return null;
+
+      const normalizedMaskTileIds = new Array<integer>(16).fill(-1);
+      for (let mask = 0; mask < 16; mask++) {
+        const rawTileId = parsedMaskTileIds[mask];
+        if (!Number.isFinite(rawTileId) || rawTileId < 0) continue;
+        normalizedMaskTileIds[mask] = this._normalizeAnimatedTileId(rawTileId);
       }
-      return terrainMaskTileIds;
+
+      const validMaskIndexes: integer[] = [];
+      for (let mask = 0; mask < 16; mask++) {
+        const tileId = normalizedMaskTileIds[mask];
+        if (tileId < 0) continue;
+        if (!tileMap.getTileDefinition(tileId)) continue;
+        validMaskIndexes.push(mask);
+      }
+      if (validMaskIndexes.length === 0) return null;
+
+      const resolvedMaskTileIds = normalizedMaskTileIds.slice();
+      for (let mask = 0; mask < 16; mask++) {
+        const tileId = resolvedMaskTileIds[mask];
+        if (tileId >= 0 && !!tileMap.getTileDefinition(tileId)) continue;
+
+        let bestFallbackMask = validMaskIndexes[0];
+        let bestDistance = this._countMaskBitDifferences(mask, bestFallbackMask);
+        for (let index = 1; index < validMaskIndexes.length; index++) {
+          const fallbackMask = validMaskIndexes[index];
+          const distance = this._countMaskBitDifferences(mask, fallbackMask);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestFallbackMask = fallbackMask;
+          }
+        }
+
+        resolvedMaskTileIds[mask] = resolvedMaskTileIds[bestFallbackMask];
+      }
+
+      return resolvedMaskTileIds;
     }
 
     private _isInsideLayerBounds(
@@ -1269,7 +1325,8 @@ namespace gdjs {
     ): boolean {
       if (!this._isInsideLayerBounds(layer, x, y)) return false;
       const tileId = layer.getTileId(x, y);
-      return typeof tileId === 'number' && terrainTileIds.has(tileId);
+      if (typeof tileId !== 'number') return false;
+      return terrainTileIds.has(this._normalizeAnimatedTileId(tileId));
     }
 
     private _applyTerrainTransitionsAroundCell(

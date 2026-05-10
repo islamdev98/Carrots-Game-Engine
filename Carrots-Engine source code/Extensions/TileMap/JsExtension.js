@@ -1063,7 +1063,7 @@ const defineSimpleTileMap = function (extension, _, gd) {
       'string',
       _('Tile ids list'),
       _(
-        'Comma-separated tile ids. Repeat the same tile id multiple times to increase its random chance.'
+        'Tile ids separated by commas/spaces/new lines. Repeat the same tile id multiple times to increase its random chance.'
       ),
       false
     )
@@ -1090,7 +1090,7 @@ const defineSimpleTileMap = function (extension, _, gd) {
       'string',
       _('Tile ids list'),
       _(
-        'Comma-separated tile ids. Repeat the same tile id multiple times to increase its random chance.'
+        'Tile ids separated by commas/spaces/new lines. Repeat the same tile id multiple times to increase its random chance.'
       ),
       false
     )
@@ -1117,7 +1117,7 @@ const defineSimpleTileMap = function (extension, _, gd) {
       'string',
       _('Tile ids list'),
       _(
-        'Comma-separated tile ids. Repeat the same tile id multiple times to increase its random chance.'
+        'Tile ids separated by commas/spaces/new lines. Repeat the same tile id multiple times to increase its random chance.'
       ),
       false
     )
@@ -1146,7 +1146,7 @@ const defineSimpleTileMap = function (extension, _, gd) {
       'string',
       _('Terrain mask tile ids'),
       _(
-        'Comma-separated list of 16 tile ids (mask order 0 to 15) used for terrain auto-tiling.'
+        'Terrain mask tile ids in mask order 0 to 15 (comma/space/new-line separated). If some masks are missing or set to -1, closest available masks are used automatically.'
       ),
       false
     )
@@ -1173,7 +1173,7 @@ const defineSimpleTileMap = function (extension, _, gd) {
       'string',
       _('Terrain mask tile ids'),
       _(
-        'Comma-separated list of 16 tile ids (mask order 0 to 15) used for terrain auto-tiling.'
+        'Terrain mask tile ids in mask order 0 to 15 (comma/space/new-line separated). If some masks are missing or set to -1, closest available masks are used automatically.'
       ),
       false
     )
