@@ -63,7 +63,7 @@ namespace gdjs {
         tileMap: TileMapHelper.EditableTileMap,
         layers: Map<integer, TransformedCollisionTileMapLayer>
       ) {
-        if (this._layerIndex) {
+        if (this._layerIndex !== null) {
           const tileLayer = tileMap.getTileLayer(this._layerIndex);
           if (!tileLayer) {
             return;

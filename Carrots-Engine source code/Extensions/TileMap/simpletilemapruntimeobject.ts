@@ -10,6 +10,13 @@ namespace gdjs {
       columnCount: number;
       tileSize: number;
       tilesWithHitBox: string;
+      defaultLayerIndex?: number;
+      collisionLayerIndex?: number;
+      useAllCollisionLayers?: boolean;
+      animatedTilesFps?: number;
+      animatedWaterTileIds?: string;
+      animatedLavaTileIds?: string;
+      animatedGrassWindTileIds?: string;
     };
   };
 
@@ -33,6 +40,11 @@ namespace gdjs {
   export type SimpleTileMapNetworkSyncData = ObjectNetworkSyncData &
     SimpleTileMapNetworkSyncDataType;
 
+  type AnimatedTileGroupType = {
+    name: string,
+    tileIds: number[],
+  };
+
   /**
    * Displays a SimpleTileMap object.
    * @category Objects > Tile Map
@@ -55,7 +67,16 @@ namespace gdjs {
     readonly _columnCount: number;
     readonly _tileSize: number;
     _displayMode = 'all';
+    _frameElapsedTime: float = 0;
     _layerIndex = 0;
+    _collisionLayerIndex = 0;
+    _useAllCollisionLayers = false;
+    _animatedTilesFps: number = 0;
+    _animatedWaterTileIdsRaw: string = '';
+    _animatedLavaTileIdsRaw: string = '';
+    _animatedGrassWindTileIdsRaw: string = '';
+    _animatedTileGroups: AnimatedTileGroupType[] = [];
+    _animatedTileCanonicalIdByTileId: Map<number, number> = new Map();
     _initialTileMapAsJsObject: TileMapHelper.EditableTileMapAsJsObject;
     readonly _initialTilesWithHitBox: number[];
     _isTileMapDirty: boolean = false;
@@ -79,6 +100,16 @@ namespace gdjs {
       this._rowCount = objectData.content.rowCount;
       this._columnCount = objectData.content.columnCount;
       this._tileSize = objectData.content.tileSize;
+      this._layerIndex = Number.isFinite(objectData.content.defaultLayerIndex)
+        ? Math.max(0, Math.floor(objectData.content.defaultLayerIndex || 0))
+        : 0;
+      this._collisionLayerIndex = Number.isFinite(
+        objectData.content.collisionLayerIndex
+      )
+        ? Math.max(0, Math.floor(objectData.content.collisionLayerIndex || 0))
+        : 0;
+      this._useAllCollisionLayers = !!objectData.content.useAllCollisionLayers;
+      this._setAnimatedTilesConfigurationFromContent(objectData.content);
       this._initialTileMapAsJsObject = {
         tileWidth: this._tileSize,
         tileHeight: this._tileSize,
@@ -104,10 +135,7 @@ namespace gdjs {
         (tileMap: TileMapHelper.EditableTileMap) => {
           this._renderer.updatePosition();
 
-          this._collisionTileMap = new gdjs.TileMap.TransformedCollisionTileMap(
-            tileMap,
-            this._hitBoxTag
-          );
+          this._collisionTileMap = this._createCollisionTileMap(tileMap);
 
           this.updateTransformation();
         }
@@ -119,6 +147,19 @@ namespace gdjs {
 
     getRendererObject() {
       return this._renderer.getRendererObject();
+    }
+
+    update(instanceContainer: gdjs.RuntimeInstanceContainer): void {
+      if (this._animatedTileGroups.length === 0 || this._animatedTilesFps <= 0) {
+        return;
+      }
+      const elapsedTime = this.getElapsedTime() / 1000;
+      this._frameElapsedTime += elapsedTime;
+      const frameDuration = 1 / this._animatedTilesFps;
+      while (this._frameElapsedTime > frameDuration) {
+        this._renderer.incrementAnimationFrameX(instanceContainer);
+        this._frameElapsedTime -= frameDuration;
+      }
     }
 
     updateTileMap(forceUpdate: boolean): void {
@@ -158,6 +199,121 @@ namespace gdjs {
       }
     }
 
+    private _sanitizeAnimationFps(value: number | undefined): number {
+      if (!Number.isFinite(value)) return 6;
+      if (!value || value <= 0) return 0;
+      return value;
+    }
+
+    private _parseTileIdsList(
+      value: string | undefined,
+      deduplicate: boolean = true
+    ): number[] {
+      if (!value) return [];
+      const parsedTileIds = value
+        .split(',')
+        .map((idAsString) => parseInt(idAsString.trim(), 10))
+        .filter((tileId) => Number.isFinite(tileId) && tileId >= 0)
+        .map((tileId) => Math.floor(tileId));
+      return deduplicate ? Array.from(new Set(parsedTileIds)) : parsedTileIds;
+    }
+
+    private _rebuildAnimatedTileCanonicalLookup() {
+      this._animatedTileCanonicalIdByTileId.clear();
+      for (const group of this._animatedTileGroups) {
+        if (group.tileIds.length < 2) continue;
+        const firstTileId = group.tileIds[0];
+        for (const tileId of group.tileIds) {
+          this._animatedTileCanonicalIdByTileId.set(tileId, firstTileId);
+        }
+      }
+    }
+
+    private _setAnimatedTilesConfigurationFromContent(content: {
+      animatedTilesFps?: number,
+      animatedWaterTileIds?: string,
+      animatedLavaTileIds?: string,
+      animatedGrassWindTileIds?: string,
+    }): void {
+      this._animatedTilesFps = this._sanitizeAnimationFps(
+        content.animatedTilesFps
+      );
+      this._animatedWaterTileIdsRaw = content.animatedWaterTileIds || '';
+      this._animatedLavaTileIdsRaw = content.animatedLavaTileIds || '';
+      this._animatedGrassWindTileIdsRaw = content.animatedGrassWindTileIds || '';
+      this._animatedTileGroups = [
+        {
+          name: 'water',
+          tileIds: this._parseTileIdsList(this._animatedWaterTileIdsRaw),
+        },
+        {
+          name: 'lava',
+          tileIds: this._parseTileIdsList(this._animatedLavaTileIdsRaw),
+        },
+        {
+          name: 'grass_wind',
+          tileIds: this._parseTileIdsList(this._animatedGrassWindTileIdsRaw),
+        },
+      ].filter((group) => group.tileIds.length >= 2);
+      this._rebuildAnimatedTileCanonicalLookup();
+      this._frameElapsedTime = 0;
+    }
+
+    private _normalizeAnimatedTileId(tileId: number): number {
+      return this._animatedTileCanonicalIdByTileId.has(tileId)
+        ? this._animatedTileCanonicalIdByTileId.get(tileId) || tileId
+        : tileId;
+    }
+
+    private _applyAnimatedTilesToTileMap(tileMap: TileMapHelper.EditableTileMap) {
+      for (const tileDefinition of tileMap.getTileDefinitions()) {
+        (tileDefinition as any).animationLength = 0;
+      }
+      if (this._animatedTileGroups.length === 0) return;
+
+      for (const group of this._animatedTileGroups) {
+        const [firstTileId, ...otherTileIds] = group.tileIds;
+        const firstTileDefinition: any = tileMap.getTileDefinition(firstTileId);
+        if (firstTileDefinition) {
+          firstTileDefinition.animationLength = group.tileIds.length;
+        }
+        for (const tileId of otherTileIds) {
+          const tileDefinition: any = tileMap.getTileDefinition(tileId);
+          if (tileDefinition) {
+            tileDefinition.animationLength = 0;
+          }
+        }
+      }
+
+      for (const layer of tileMap.getLayers()) {
+        if (!(layer instanceof TileMapHelper.EditableTileMapLayer)) {
+          continue;
+        }
+        for (let y = 0; y < layer.getDimensionY(); y++) {
+          for (let x = 0; x < layer.getDimensionX(); x++) {
+            const tileId = layer.getTileId(x, y);
+            if (tileId === undefined) continue;
+            const normalizedTileId = this._normalizeAnimatedTileId(tileId);
+            if (normalizedTileId === tileId) continue;
+            const isFlippedHorizontally = layer.isFlippedHorizontally(x, y);
+            const isFlippedVertically = layer.isFlippedVertically(x, y);
+            const isFlippedDiagonally = layer.isFlippedDiagonally(x, y);
+            layer.setTile(x, y, normalizedTileId);
+            layer.setFlippedHorizontally(x, y, isFlippedHorizontally);
+            layer.setFlippedVertically(x, y, isFlippedVertically);
+            layer.setFlippedDiagonally(x, y, isFlippedDiagonally);
+          }
+        }
+      }
+    }
+
+    private _applyAnimatedTilesToLoadedTileMap() {
+      if (!this._tileMap) return;
+      this._applyAnimatedTilesToTileMap(this._tileMap);
+      this._isTileMapDirty = true;
+      this._refreshCollisionTileMapFromCurrentTileMap();
+    }
+
     updateFromObjectData(
       oldObjectData: SimpleTileMapObjectData,
       newObjectData: SimpleTileMapObjectData
@@ -167,6 +323,44 @@ namespace gdjs {
       ) {
         // TODO: support changing the atlas texture
         return false;
+      }
+      if (
+        oldObjectData.content.animatedTilesFps !==
+          newObjectData.content.animatedTilesFps ||
+        oldObjectData.content.animatedWaterTileIds !==
+          newObjectData.content.animatedWaterTileIds ||
+        oldObjectData.content.animatedLavaTileIds !==
+          newObjectData.content.animatedLavaTileIds ||
+        oldObjectData.content.animatedGrassWindTileIds !==
+          newObjectData.content.animatedGrassWindTileIds
+      ) {
+        this._setAnimatedTilesConfigurationFromContent(newObjectData.content);
+        this._applyAnimatedTilesToLoadedTileMap();
+      }
+      const nextDefaultLayerIndex = Number.isFinite(
+        newObjectData.content.defaultLayerIndex
+      )
+        ? Math.max(0, Math.floor(newObjectData.content.defaultLayerIndex || 0))
+        : 0;
+      this._layerIndex = nextDefaultLayerIndex;
+
+      const nextCollisionLayerIndex = Number.isFinite(
+        newObjectData.content.collisionLayerIndex
+      )
+        ? Math.max(
+            0,
+            Math.floor(newObjectData.content.collisionLayerIndex || 0)
+          )
+        : 0;
+      const nextUseAllCollisionLayers =
+        !!newObjectData.content.useAllCollisionLayers;
+      if (
+        this._collisionLayerIndex !== nextCollisionLayerIndex ||
+        this._useAllCollisionLayers !== nextUseAllCollisionLayers
+      ) {
+        this._collisionLayerIndex = nextCollisionLayerIndex;
+        this._useAllCollisionLayers = nextUseAllCollisionLayers;
+        this._refreshCollisionTileMapFromCurrentTileMap();
       }
       // Map content is updated at hot-reload by extraInitializationFromInitialInstance.
       return true;
@@ -214,11 +408,7 @@ namespace gdjs {
               // If collision tile map is already defined, only update it.
               this._collisionTileMap.updateFromTileMap(tileMap);
             } else {
-              this._collisionTileMap =
-                new gdjs.TileMap.TransformedCollisionTileMap(
-                  tileMap,
-                  this._hitBoxTag
-                );
+              this._collisionTileMap = this._createCollisionTileMap(tileMap);
             }
 
             this.updateTransformation();
@@ -262,11 +452,7 @@ namespace gdjs {
             // scene so the collision is tile map is updated instead of being re-created.
             this._collisionTileMap.updateFromTileMap(tileMap);
           } else {
-            this._collisionTileMap =
-              new gdjs.TileMap.TransformedCollisionTileMap(
-                tileMap,
-                this._hitBoxTag
-              );
+            this._collisionTileMap = this._createCollisionTileMap(tileMap);
           }
 
           this._transformationIsUpToDate = false;
@@ -274,6 +460,33 @@ namespace gdjs {
           this.invalidateHitboxes();
         }
       );
+    }
+
+    private _createCollisionTileMap(tileMap: TileMapHelper.EditableTileMap) {
+      return new gdjs.TileMap.TransformedCollisionTileMap(
+        tileMap,
+        this._hitBoxTag,
+        this._useAllCollisionLayers ? null : this._collisionLayerIndex
+      );
+    }
+
+    private _refreshCollisionTileMapFromCurrentTileMap() {
+      if (!this._tileMap) return;
+      this._collisionTileMap = this._createCollisionTileMap(this._tileMap);
+      this.invalidateHitboxes();
+      this._transformationIsUpToDate = false;
+      this.updateTransformation();
+    }
+
+    private _ensureLayerExists(
+      layerIndex: integer
+    ): TileMapHelper.EditableTileMapLayer | null {
+      if (!this._tileMap) return null;
+      let layer = this._tileMap.getTileLayer(layerIndex);
+      if (!layer) {
+        layer = this._tileMap.addNewTileLayer(layerIndex);
+      }
+      return layer;
     }
 
     private _loadTileMap(
@@ -294,6 +507,7 @@ namespace gdjs {
         this._columnCount,
         this._rowCount,
         (tileMap: TileMapHelper.EditableTileMap) => {
+          this._applyAnimatedTilesToTileMap(tileMap);
           this._initialTilesWithHitBox.forEach((tileId) => {
             const tileDefinition = tileMap.getTileDefinition(tileId);
             if (!tileDefinition) {
@@ -708,7 +922,7 @@ namespace gdjs {
     }
 
     getTileAtGridCoordinates(columnIndex: integer, rowIndex: integer): integer {
-      return this.getTileId(columnIndex, rowIndex, 0);
+      return this.getTileId(columnIndex, rowIndex, this._layerIndex);
     }
 
     setTileAtPosition(tileId: number, x: float, y: float) {
@@ -725,20 +939,23 @@ namespace gdjs {
       if (!this._tileMap) {
         return;
       }
-      const layer = this._tileMap.getTileLayer(this._layerIndex);
+      const normalizedTileId = this._normalizeAnimatedTileId(tileId);
+      const layer = this._ensureLayerExists(this._layerIndex);
       if (!layer) {
         return;
       }
       const oldTileId = layer.getTileId(columnIndex, rowIndex);
-      if (tileId === oldTileId) {
+      if (normalizedTileId === oldTileId) {
         return;
       }
-      layer.setTile(columnIndex, rowIndex, tileId);
+      layer.setTile(columnIndex, rowIndex, normalizedTileId);
 
       if (this._collisionTileMap) {
         const oldTileDefinition =
           oldTileId !== undefined && this._tileMap.getTileDefinition(oldTileId);
-        const newTileDefinition = this._tileMap.getTileDefinition(tileId);
+        const newTileDefinition = this._tileMap.getTileDefinition(
+          normalizedTileId
+        );
         const hadFullHitBox =
           !!oldTileDefinition &&
           oldTileDefinition.hasFullHitBox(this._hitBoxTag);
@@ -773,7 +990,7 @@ namespace gdjs {
       rowIndex: integer,
       flip: boolean
     ) {
-      this.flipTileOnY(columnIndex, rowIndex, 0, flip);
+      this.flipTileOnY(columnIndex, rowIndex, this._layerIndex, flip);
       this._isTileMapDirty = true;
       // No need to invalidate hit boxes since at the moment, collision mask
       // cannot be configured on each tile.
@@ -784,7 +1001,7 @@ namespace gdjs {
       rowIndex: integer,
       flip: boolean
     ) {
-      this.flipTileOnX(columnIndex, rowIndex, 0, flip);
+      this.flipTileOnX(columnIndex, rowIndex, this._layerIndex, flip);
       this._isTileMapDirty = true;
       // No need to invalidate hit boxes since at the moment, collision mask
       // cannot be configured on each tile.
@@ -798,7 +1015,7 @@ namespace gdjs {
     }
 
     isTileFlippedOnXAtGridCoordinates(columnIndex: integer, rowIndex: integer) {
-      return this.isTileFlippedOnX(columnIndex, rowIndex, 0);
+      return this.isTileFlippedOnX(columnIndex, rowIndex, this._layerIndex);
     }
 
     isTileFlippedOnYAtPosition(x: float, y: float) {
@@ -809,7 +1026,7 @@ namespace gdjs {
     }
 
     isTileFlippedOnYAtGridCoordinates(columnIndex: integer, rowIndex: integer) {
-      return this.isTileFlippedOnY(columnIndex, rowIndex, 0);
+      return this.isTileFlippedOnY(columnIndex, rowIndex, this._layerIndex);
     }
 
     removeTileAtPosition(x: float, y: float) {
@@ -872,6 +1089,247 @@ namespace gdjs {
     getGridColumnCount(): integer {
       if (!this._tileMap) return 0;
       return this._tileMap.getDimensionX();
+    }
+
+    setLayerIndex(layerIndex: integer): void {
+      this._layerIndex = Math.max(0, Math.floor(layerIndex));
+    }
+
+    getLayerIndex(): integer {
+      return this._layerIndex;
+    }
+
+    getLayerCount(): integer {
+      if (!this._tileMap) return 0;
+      let count = 0;
+      for (const layer of this._tileMap.getLayers()) {
+        if (layer instanceof TileMapHelper.EditableTileMapLayer) {
+          count++;
+        }
+      }
+      return count;
+    }
+
+    setCollisionLayerIndex(layerIndex: integer): void {
+      this._collisionLayerIndex = Math.max(0, Math.floor(layerIndex));
+      if (!this._useAllCollisionLayers) {
+        this._refreshCollisionTileMapFromCurrentTileMap();
+      }
+    }
+
+    getCollisionLayerIndex(): integer {
+      return this._collisionLayerIndex;
+    }
+
+    setUseAllCollisionLayers(useAllCollisionLayers: boolean): void {
+      this._useAllCollisionLayers = !!useAllCollisionLayers;
+      this._refreshCollisionTileMapFromCurrentTileMap();
+    }
+
+    isUsingAllCollisionLayers(): boolean {
+      return this._useAllCollisionLayers;
+    }
+
+    setAnimatedTilesFps(animationFps: number): void {
+      this._animatedTilesFps = this._sanitizeAnimationFps(animationFps);
+      this._frameElapsedTime = 0;
+    }
+
+    getAnimatedTilesFps(): number {
+      return this._animatedTilesFps;
+    }
+
+    setAnimatedWaterTileIds(tileIdsAsText: string): void {
+      this._setAnimatedTilesConfigurationFromContent({
+        animatedTilesFps: this._animatedTilesFps,
+        animatedWaterTileIds: tileIdsAsText,
+        animatedLavaTileIds: this._animatedLavaTileIdsRaw,
+        animatedGrassWindTileIds: this._animatedGrassWindTileIdsRaw,
+      });
+      this._applyAnimatedTilesToLoadedTileMap();
+    }
+
+    getAnimatedWaterTileIds(): string {
+      return this._animatedWaterTileIdsRaw;
+    }
+
+    setAnimatedLavaTileIds(tileIdsAsText: string): void {
+      this._setAnimatedTilesConfigurationFromContent({
+        animatedTilesFps: this._animatedTilesFps,
+        animatedWaterTileIds: this._animatedWaterTileIdsRaw,
+        animatedLavaTileIds: tileIdsAsText,
+        animatedGrassWindTileIds: this._animatedGrassWindTileIdsRaw,
+      });
+      this._applyAnimatedTilesToLoadedTileMap();
+    }
+
+    getAnimatedLavaTileIds(): string {
+      return this._animatedLavaTileIdsRaw;
+    }
+
+    setAnimatedGrassWindTileIds(tileIdsAsText: string): void {
+      this._setAnimatedTilesConfigurationFromContent({
+        animatedTilesFps: this._animatedTilesFps,
+        animatedWaterTileIds: this._animatedWaterTileIdsRaw,
+        animatedLavaTileIds: this._animatedLavaTileIdsRaw,
+        animatedGrassWindTileIds: tileIdsAsText,
+      });
+      this._applyAnimatedTilesToLoadedTileMap();
+    }
+
+    getAnimatedGrassWindTileIds(): string {
+      return this._animatedGrassWindTileIdsRaw;
+    }
+
+    private _pickRandomTileIdFromText(tileIdsAsText: string): integer {
+      const tileMap = this._tileMap;
+      if (!tileMap) return -1;
+      const parsedTileIds = this._parseTileIdsList(tileIdsAsText, false)
+        .map((tileId) => this._normalizeAnimatedTileId(tileId))
+        .filter((tileId) => !!tileMap.getTileDefinition(tileId));
+      if (parsedTileIds.length === 0) return -1;
+      const randomIndex = gdjs.random(parsedTileIds.length - 1);
+      return parsedTileIds[randomIndex];
+    }
+
+    setRandomTileAtPosition(tileIdsAsText: string, x: float, y: float): void {
+      const [columnIndex, rowIndex] =
+        this.getGridCoordinatesFromSceneCoordinates(x, y);
+      this.setRandomTileAtGridCoordinates(tileIdsAsText, columnIndex, rowIndex);
+    }
+
+    setRandomTileAtGridCoordinates(
+      tileIdsAsText: string,
+      columnIndex: integer,
+      rowIndex: integer
+    ): void {
+      const randomTileId = this._pickRandomTileIdFromText(tileIdsAsText);
+      if (randomTileId < 0) return;
+      this.setTileAtGridCoordinates(randomTileId, columnIndex, rowIndex);
+    }
+
+    fillRandomTilesInGridArea(
+      tileIdsAsText: string,
+      startColumnIndex: integer,
+      startRowIndex: integer,
+      endColumnIndex: integer,
+      endRowIndex: integer
+    ): void {
+      if (!this._tileMap) return;
+      const minColumnIndex = Math.min(startColumnIndex, endColumnIndex);
+      const maxColumnIndex = Math.max(startColumnIndex, endColumnIndex);
+      const minRowIndex = Math.min(startRowIndex, endRowIndex);
+      const maxRowIndex = Math.max(startRowIndex, endRowIndex);
+      for (let columnIndex = minColumnIndex; columnIndex <= maxColumnIndex; columnIndex++) {
+        for (let rowIndex = minRowIndex; rowIndex <= maxRowIndex; rowIndex++) {
+          this.setRandomTileAtGridCoordinates(
+            tileIdsAsText,
+            columnIndex,
+            rowIndex
+          );
+        }
+      }
+    }
+
+    private _getTerrainMaskTileIdsFromText(
+      tileIdsAsText: string
+    ): integer[] | null {
+      const tileMap = this._tileMap;
+      if (!tileMap) return null;
+      const terrainMaskTileIds = this._parseTileIdsList(tileIdsAsText, false)
+        .slice(0, 16)
+        .map((tileId) => this._normalizeAnimatedTileId(tileId));
+      if (terrainMaskTileIds.length < 16) return null;
+      if (
+        !terrainMaskTileIds.every((tileId) => !!tileMap.getTileDefinition(tileId))
+      ) {
+        return null;
+      }
+      return terrainMaskTileIds;
+    }
+
+    private _isInsideLayerBounds(
+      layer: TileMapHelper.EditableTileMapLayer,
+      x: integer,
+      y: integer
+    ): boolean {
+      return (
+        x >= 0 &&
+        y >= 0 &&
+        x < layer.getDimensionX() &&
+        y < layer.getDimensionY()
+      );
+    }
+
+    private _isTerrainTile(
+      layer: TileMapHelper.EditableTileMapLayer,
+      terrainTileIds: Set<number>,
+      x: integer,
+      y: integer
+    ): boolean {
+      if (!this._isInsideLayerBounds(layer, x, y)) return false;
+      const tileId = layer.getTileId(x, y);
+      return typeof tileId === 'number' && terrainTileIds.has(tileId);
+    }
+
+    private _applyTerrainTransitionsAroundCell(
+      layer: TileMapHelper.EditableTileMapLayer,
+      layerIndex: integer,
+      terrainMaskTileIds: integer[],
+      centerX: integer,
+      centerY: integer
+    ): void {
+      if (!this._tileMap) return;
+      const terrainTileIds = new Set(terrainMaskTileIds);
+      const candidateCells = [
+        [centerX, centerY],
+        [centerX + 1, centerY],
+        [centerX - 1, centerY],
+        [centerX, centerY + 1],
+        [centerX, centerY - 1],
+      ];
+      for (const [x, y] of candidateCells) {
+        if (!this._isTerrainTile(layer, terrainTileIds, x, y)) continue;
+        const mask =
+          (this._isTerrainTile(layer, terrainTileIds, x, y - 1) ? 1 : 0) |
+          (this._isTerrainTile(layer, terrainTileIds, x + 1, y) ? 2 : 0) |
+          (this._isTerrainTile(layer, terrainTileIds, x, y + 1) ? 4 : 0) |
+          (this._isTerrainTile(layer, terrainTileIds, x - 1, y) ? 8 : 0);
+        const terrainTileId = terrainMaskTileIds[mask];
+        if (!this._tileMap.getTileDefinition(terrainTileId)) continue;
+        this.setTileAtGridCoordinates(terrainTileId, x, y);
+        this.flipTileOnX(x, y, layerIndex, false);
+        this.flipTileOnY(x, y, layerIndex, false);
+      }
+    }
+
+    setTerrainTileAtPosition(tileIdsAsText: string, x: float, y: float): void {
+      const [columnIndex, rowIndex] =
+        this.getGridCoordinatesFromSceneCoordinates(x, y);
+      this.setTerrainTileAtGridCoordinates(tileIdsAsText, columnIndex, rowIndex);
+    }
+
+    setTerrainTileAtGridCoordinates(
+      tileIdsAsText: string,
+      columnIndex: integer,
+      rowIndex: integer
+    ): void {
+      if (!this._tileMap) return;
+      const layer = this._ensureLayerExists(this._layerIndex);
+      if (!layer) return;
+      const terrainMaskTileIds = this._getTerrainMaskTileIdsFromText(tileIdsAsText);
+      if (!terrainMaskTileIds) return;
+      this.setTileAtGridCoordinates(terrainMaskTileIds[0], columnIndex, rowIndex);
+      this.flipTileOnX(columnIndex, rowIndex, this._layerIndex, false);
+      this.flipTileOnY(columnIndex, rowIndex, this._layerIndex, false);
+      this._applyTerrainTransitionsAroundCell(
+        layer,
+        this._layerIndex,
+        terrainMaskTileIds,
+        columnIndex,
+        rowIndex
+      );
+      this._isTileMapDirty = true;
     }
 
     getTilesetColumnCount(): integer {

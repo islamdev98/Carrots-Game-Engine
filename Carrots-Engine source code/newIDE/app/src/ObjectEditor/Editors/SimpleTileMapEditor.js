@@ -16,6 +16,7 @@ import type { TileMapTileSelection } from '../../InstancesEditor/TileSetVisualiz
 import { Column, Line } from '../../UI/Grid';
 import AlertMessage from '../../UI/AlertMessage';
 import Text from '../../UI/Text';
+import InlineCheckbox from '../../UI/InlineCheckbox';
 
 const SimpleTileMapEditor = ({
   objectConfiguration,
@@ -38,6 +39,21 @@ const SimpleTileMapEditor = ({
   );
   const [error, setError] = React.useState<React.Node>(null);
   const atlasImage = objectProperties.get('atlasImage').getValue();
+  const defaultLayerIndex = Math.max(
+    0,
+    Math.floor(parseFloat(objectProperties.get('defaultLayerIndex').getValue()) || 0)
+  );
+  const collisionLayerIndex = Math.max(
+    0,
+    Math.floor(
+      parseFloat(objectProperties.get('collisionLayerIndex').getValue()) || 0
+    )
+  );
+  const useAllCollisionLayersValue = objectProperties
+    .get('useAllCollisionLayers')
+    .getValue();
+  const useAllCollisionLayers =
+    useAllCollisionLayersValue === 'true' || useAllCollisionLayersValue === '1';
   const previousAtlasImageResourceName = React.useRef<string>(atlasImage);
   const tilesWithHitBox = objectProperties
     .get('tilesWithHitBox')
@@ -130,6 +146,42 @@ const SimpleTileMapEditor = ({
     [columnCount, objectConfiguration, forceUpdate, onObjectUpdated]
   );
 
+  const setDefaultLayerIndex = React.useCallback(
+    (value: number) => {
+      objectConfiguration.updateProperty(
+        'defaultLayerIndex',
+        Math.max(0, Math.floor(value || 0)).toString()
+      );
+      if (onObjectUpdated) onObjectUpdated();
+      forceUpdate();
+    },
+    [objectConfiguration, onObjectUpdated, forceUpdate]
+  );
+
+  const setCollisionLayerIndex = React.useCallback(
+    (value: number) => {
+      objectConfiguration.updateProperty(
+        'collisionLayerIndex',
+        Math.max(0, Math.floor(value || 0)).toString()
+      );
+      if (onObjectUpdated) onObjectUpdated();
+      forceUpdate();
+    },
+    [objectConfiguration, onObjectUpdated, forceUpdate]
+  );
+
+  const setUseAllCollisionLayers = React.useCallback(
+    (checked: boolean) => {
+      objectConfiguration.updateProperty(
+        'useAllCollisionLayers',
+        checked ? 'true' : 'false'
+      );
+      if (onObjectUpdated) onObjectUpdated();
+      forceUpdate();
+    },
+    [objectConfiguration, onObjectUpdated, forceUpdate]
+  );
+
   // $FlowFixMe[missing-local-annot]
   const onScrollY = React.useCallback(deltaY => {
     if (scrollViewRef.current) {
@@ -200,7 +252,49 @@ const SimpleTileMapEditor = ({
             <Line>
               <Column noMargin>
                 <Text noMargin size="sub-title">
-                  <Trans>Configure tile’s hit boxes</Trans>
+                  <Trans>Layer and collision settings</Trans>
+                </Text>
+                <Text noMargin>
+                  <Trans>
+                    Configure which layer is painted by default and which
+                    layer(s) should generate collisions.
+                  </Trans>
+                </Text>
+              </Column>
+            </Line>
+            <SemiControlledTextField
+              floatingLabelFixed
+              floatingLabelText={<Trans>Default paint layer index</Trans>}
+              id="defaultLayerIndex"
+              type="number"
+              min={0}
+              value={defaultLayerIndex.toString()}
+              onChange={value =>
+                setDefaultLayerIndex(Math.max(parseInt(value, 10) || 0, 0))
+              }
+            />
+            <InlineCheckbox
+              id="useAllCollisionLayers"
+              checked={useAllCollisionLayers}
+              label={<Trans>Use all layers for collisions</Trans>}
+              onCheck={(event, checked) => setUseAllCollisionLayers(checked)}
+            />
+            <SemiControlledTextField
+              floatingLabelFixed
+              floatingLabelText={<Trans>Collision layer index</Trans>}
+              id="collisionLayerIndex"
+              type="number"
+              min={0}
+              disabled={useAllCollisionLayers}
+              value={collisionLayerIndex.toString()}
+              onChange={value =>
+                setCollisionLayerIndex(Math.max(parseInt(value, 10) || 0, 0))
+              }
+            />
+            <Line>
+              <Column noMargin>
+                <Text noMargin size="sub-title">
+                  <Trans>Configure tile collisions</Trans>
                 </Text>
                 <Text noMargin>
                   <Trans>

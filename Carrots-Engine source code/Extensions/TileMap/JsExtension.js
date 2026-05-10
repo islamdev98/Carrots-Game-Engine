@@ -620,6 +620,41 @@ const defineSimpleTileMap = function (extension, _, gd) {
       objectContent.tilesWithHitBox = newValue;
       return true;
     }
+    if (propertyName === 'defaultLayerIndex') {
+      const parsedValue = parseFloat(newValue);
+      objectContent.defaultLayerIndex = Number.isFinite(parsedValue)
+        ? Math.max(0, Math.floor(parsedValue))
+        : 0;
+      return true;
+    }
+    if (propertyName === 'collisionLayerIndex') {
+      const parsedValue = parseFloat(newValue);
+      objectContent.collisionLayerIndex = Number.isFinite(parsedValue)
+        ? Math.max(0, Math.floor(parsedValue))
+        : 0;
+      return true;
+    }
+    if (propertyName === 'useAllCollisionLayers') {
+      objectContent.useAllCollisionLayers =
+        newValue === '1' || newValue === 'true' || newValue === true;
+      return true;
+    }
+    if (propertyName === 'animatedTilesFps') {
+      objectContent.animatedTilesFps = parseFloat(newValue);
+      return true;
+    }
+    if (propertyName === 'animatedWaterTileIds') {
+      objectContent.animatedWaterTileIds = newValue;
+      return true;
+    }
+    if (propertyName === 'animatedLavaTileIds') {
+      objectContent.animatedLavaTileIds = newValue;
+      return true;
+    }
+    if (propertyName === 'animatedGrassWindTileIds') {
+      objectContent.animatedGrassWindTileIds = newValue;
+      return true;
+    }
 
     return false;
   };
@@ -676,6 +711,99 @@ const defineSimpleTileMap = function (extension, _, gd) {
         )
         .setHidden(true)
     );
+    objectProperties.set(
+      'defaultLayerIndex',
+      new gd.PropertyDescriptor(
+        (
+          typeof objectContent.defaultLayerIndex === 'undefined'
+            ? 0
+            : objectContent.defaultLayerIndex
+        ).toString()
+      )
+        .setType('number')
+        .setLabel(_('Active layer index'))
+        .setDescription(
+          _(
+            'The layer index used by tile painting and tile actions on this object.'
+          )
+        )
+        .setGroup(_('Layers'))
+    );
+    objectProperties.set(
+      'collisionLayerIndex',
+      new gd.PropertyDescriptor(
+        (
+          typeof objectContent.collisionLayerIndex === 'undefined'
+            ? 0
+            : objectContent.collisionLayerIndex
+        ).toString()
+      )
+        .setType('number')
+        .setLabel(_('Collision layer index'))
+        .setDescription(
+          _(
+            'If "Use all layers for collisions" is disabled, only this layer contributes hitboxes.'
+          )
+        )
+        .setGroup(_('Collisions'))
+        .setAdvanced(true)
+    );
+    objectProperties.set(
+      'useAllCollisionLayers',
+      new gd.PropertyDescriptor(
+        objectContent.useAllCollisionLayers ? 'true' : 'false'
+      )
+        .setType('boolean')
+        .setLabel(_('Use all layers for collisions'))
+        .setGroup(_('Collisions'))
+        .setAdvanced(true)
+    );
+    objectProperties.set(
+      'animatedTilesFps',
+      new gd.PropertyDescriptor(
+        (
+          typeof objectContent.animatedTilesFps === 'undefined'
+            ? 6
+            : objectContent.animatedTilesFps
+        ).toString()
+      )
+        .setType('number')
+        .setLabel(_('Animated tiles FPS'))
+        .setDescription(_('Animation speed used by animated tiles.'))
+        .setGroup(_('Animated tiles'))
+    );
+    objectProperties.set(
+      'animatedWaterTileIds',
+      new gd.PropertyDescriptor(objectContent.animatedWaterTileIds || '')
+        .setType('string')
+        .setLabel(_('Water tile ids'))
+        .setDescription(
+          _('Comma-separated tile ids used as the water animation frames.')
+        )
+        .setGroup(_('Animated tiles'))
+    );
+    objectProperties.set(
+      'animatedLavaTileIds',
+      new gd.PropertyDescriptor(objectContent.animatedLavaTileIds || '')
+        .setType('string')
+        .setLabel(_('Lava tile ids'))
+        .setDescription(
+          _('Comma-separated tile ids used as the lava animation frames.')
+        )
+        .setGroup(_('Animated tiles'))
+    );
+    objectProperties.set(
+      'animatedGrassWindTileIds',
+      new gd.PropertyDescriptor(objectContent.animatedGrassWindTileIds || '')
+        .setType('string')
+        .setLabel(_('Grass wind tile ids'))
+        .setDescription(
+          _(
+            'Comma-separated tile ids used as the grass wind animation frames.'
+          )
+        )
+        .setGroup(_('Animated tiles'))
+    );
 
     objectProperties.set(
       'atlasImage',
@@ -695,6 +823,13 @@ const defineSimpleTileMap = function (extension, _, gd) {
     columnCount: 1,
     tileSize: 8,
     tilesWithHitBox: '',
+    defaultLayerIndex: 0,
+    collisionLayerIndex: 0,
+    useAllCollisionLayers: false,
+    animatedTilesFps: 6,
+    animatedWaterTileIds: '',
+    animatedLavaTileIds: '',
+    animatedGrassWindTileIds: '',
   };
 
   objectSimpleTileMap.updateInitialInstanceProperty = function (
@@ -911,6 +1046,143 @@ const defineSimpleTileMap = function (extension, _, gd) {
 
   object
     .addAction(
+      'SetRandomTileAtPosition',
+      _('Set random tile (at position)'),
+      _(
+        'Set a random tile from a comma-separated list at the specified scene coordinates.'
+      ),
+      _(
+        'Set a random tile from _PARAM1_ in _PARAM0_ at scene coordinates _PARAM2_ ; _PARAM3_'
+      ),
+      _('Procedural'),
+      'JsPlatform/Extensions/tile_map.svg',
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .addParameter(
+      'string',
+      _('Tile ids list'),
+      _(
+        'Comma-separated tile ids. Repeat the same tile id multiple times to increase its random chance.'
+      ),
+      false
+    )
+    .addParameter('number', _('Position X'), '', false)
+    .addParameter('number', _('Position Y'), '', false)
+    .setFunctionName('setRandomTileAtPosition');
+
+  object
+    .addAction(
+      'SetRandomTileAtGridCoordinates',
+      _('Set random tile (on the grid)'),
+      _(
+        'Set a random tile from a comma-separated list at the specified grid coordinates.'
+      ),
+      _(
+        'Set a random tile from _PARAM1_ in _PARAM0_ at grid coordinates _PARAM2_ ; _PARAM3_'
+      ),
+      _('Procedural'),
+      'JsPlatform/Extensions/tile_map.svg',
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .addParameter(
+      'string',
+      _('Tile ids list'),
+      _(
+        'Comma-separated tile ids. Repeat the same tile id multiple times to increase its random chance.'
+      ),
+      false
+    )
+    .addParameter('number', _('Grid X'), '', false)
+    .addParameter('number', _('Grid Y'), '', false)
+    .setFunctionName('setRandomTileAtGridCoordinates');
+
+  object
+    .addAction(
+      'FillRandomTilesInGridArea',
+      _('Fill area with random tiles'),
+      _(
+        'Fill a rectangular grid area with random tiles from a comma-separated list.'
+      ),
+      _(
+        'Fill random tiles from _PARAM1_ in _PARAM0_ from grid _PARAM2_;_PARAM3_ to _PARAM4_;_PARAM5_'
+      ),
+      _('Procedural'),
+      'JsPlatform/Extensions/tile_map.svg',
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .addParameter(
+      'string',
+      _('Tile ids list'),
+      _(
+        'Comma-separated tile ids. Repeat the same tile id multiple times to increase its random chance.'
+      ),
+      false
+    )
+    .addParameter('number', _('Start grid X'), '', false)
+    .addParameter('number', _('Start grid Y'), '', false)
+    .addParameter('number', _('End grid X'), '', false)
+    .addParameter('number', _('End grid Y'), '', false)
+    .setFunctionName('fillRandomTilesInGridArea');
+
+  object
+    .addAction(
+      'SetTerrainTileAtPosition',
+      _('Set terrain tile (at position)'),
+      _(
+        'Set a terrain tile and auto-connect with neighbors using a 16-tile terrain mask list.'
+      ),
+      _(
+        'Set terrain tile from _PARAM1_ in _PARAM0_ at scene coordinates _PARAM2_ ; _PARAM3_'
+      ),
+      _('Terrain'),
+      'JsPlatform/Extensions/tile_map.svg',
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .addParameter(
+      'string',
+      _('Terrain mask tile ids'),
+      _(
+        'Comma-separated list of 16 tile ids (mask order 0 to 15) used for terrain auto-tiling.'
+      ),
+      false
+    )
+    .addParameter('number', _('Position X'), '', false)
+    .addParameter('number', _('Position Y'), '', false)
+    .setFunctionName('setTerrainTileAtPosition');
+
+  object
+    .addAction(
+      'SetTerrainTileAtGridCoordinates',
+      _('Set terrain tile (on the grid)'),
+      _(
+        'Set a terrain tile and auto-connect with neighbors using a 16-tile terrain mask list.'
+      ),
+      _(
+        'Set terrain tile from _PARAM1_ in _PARAM0_ at grid coordinates _PARAM2_ ; _PARAM3_'
+      ),
+      _('Terrain'),
+      'JsPlatform/Extensions/tile_map.svg',
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .addParameter(
+      'string',
+      _('Terrain mask tile ids'),
+      _(
+        'Comma-separated list of 16 tile ids (mask order 0 to 15) used for terrain auto-tiling.'
+      ),
+      false
+    )
+    .addParameter('number', _('Grid X'), '', false)
+    .addParameter('number', _('Grid Y'), '', false)
+    .setFunctionName('setTerrainTileAtGridCoordinates');
+
+  object
+    .addAction(
       'FlipTileOnYAtGridCoordinates',
       _('Flip tile vertically (on the grid)'),
       _('Flip tile vertically at grid coordinates.'),
@@ -1064,6 +1336,135 @@ const defineSimpleTileMap = function (extension, _, gd) {
     .useStandardParameters('number', gd.ParameterOptions.makeNewOptions())
     .setFunctionName('setGridColumnCount')
     .setGetter('getGridColumnCount');
+
+  object
+    .addExpressionAndConditionAndAction(
+      'number',
+      'LayerIndex',
+      _('Active layer index'),
+      _('the active layer index in the tile map'),
+      _('the active layer index'),
+      _('Layers'),
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .useStandardParameters('number', gd.ParameterOptions.makeNewOptions())
+    .setFunctionName('setLayerIndex')
+    .setGetter('getLayerIndex');
+
+  object
+    .addExpression(
+      'LayerCount',
+      _('Layer count'),
+      _('Get the number of layers in the tile map.'),
+      '',
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .setFunctionName('getLayerCount');
+
+  object
+    .addExpressionAndConditionAndAction(
+      'number',
+      'CollisionLayerIndex',
+      _('Collision layer index'),
+      _('the collision layer index used by hitboxes'),
+      _('the collision layer index'),
+      _('Collisions'),
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .useStandardParameters('number', gd.ParameterOptions.makeNewOptions())
+    .setFunctionName('setCollisionLayerIndex')
+    .setGetter('getCollisionLayerIndex');
+
+  object
+    .addCondition(
+      'UseAllCollisionLayers',
+      _('Using all layers for collisions'),
+      _('Check if all layers are used for collisions.'),
+      _('All layers of _PARAM0_ are used for collisions'),
+      _('Collisions'),
+      'JsPlatform/Extensions/tile_map.svg',
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .getCodeExtraInformation()
+    .setFunctionName('isUsingAllCollisionLayers');
+
+  object
+    .addAction(
+      'SetUseAllCollisionLayers',
+      _('Use all layers for collisions'),
+      _('Choose if all layers are used for collisions or only one layer.'),
+      _('Use all layers for collisions in _PARAM0_: _PARAM1_'),
+      _('Collisions'),
+      'JsPlatform/Extensions/tile_map.svg',
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .addParameter('yesorno', _('Use all layers'), '', false)
+    .setFunctionName('setUseAllCollisionLayers');
+
+  object
+    .addExpressionAndConditionAndAction(
+      'number',
+      'AnimatedTilesFps',
+      _('Animated tiles FPS'),
+      _('the animated tiles FPS'),
+      _('the animated tiles FPS'),
+      _('Animated tiles'),
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .useStandardParameters('number', gd.ParameterOptions.makeNewOptions())
+    .setFunctionName('setAnimatedTilesFps')
+    .setGetter('getAnimatedTilesFps');
+
+  object
+    .addExpressionAndConditionAndAction(
+      'string',
+      'AnimatedWaterTileIds',
+      _('Animated water tile ids'),
+      _('the animated water tile ids'),
+      _('the animated water tile ids'),
+      _('Animated tiles'),
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .useStandardParameters('string', gd.ParameterOptions.makeNewOptions())
+    .setFunctionName('setAnimatedWaterTileIds')
+    .setGetter('getAnimatedWaterTileIds');
+
+  object
+    .addExpressionAndConditionAndAction(
+      'string',
+      'AnimatedLavaTileIds',
+      _('Animated lava tile ids'),
+      _('the animated lava tile ids'),
+      _('the animated lava tile ids'),
+      _('Animated tiles'),
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .useStandardParameters('string', gd.ParameterOptions.makeNewOptions())
+    .setFunctionName('setAnimatedLavaTileIds')
+    .setGetter('getAnimatedLavaTileIds');
+
+  object
+    .addExpressionAndConditionAndAction(
+      'string',
+      'AnimatedGrassWindTileIds',
+      _('Animated grass wind tile ids'),
+      _('the animated grass wind tile ids'),
+      _('the animated grass wind tile ids'),
+      _('Animated tiles'),
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('Tile map'), 'SimpleTileMap', false)
+    .useStandardParameters('string', gd.ParameterOptions.makeNewOptions())
+    .setFunctionName('setAnimatedGrassWindTileIds')
+    .setGetter('getAnimatedGrassWindTileIds');
 };
 
 /**

@@ -78,6 +78,9 @@ const styles = {
   dropCursor: { cursor: 'copy' },
 };
 
+const getSafeLayerIndex = (layerIndex: ?number): number =>
+  Number.isFinite(layerIndex) ? Math.max(0, Math.floor(layerIndex || 0)) : 0;
+
 type DraggedObjectItem = {|
   name?: string,
   is3D?: boolean,
@@ -1026,6 +1029,138 @@ export default class InstancesEditor extends Component<Props, State> {
         }
       );
 
+      const paintingSelection = getTileMapPaintingSelection(tileMapTileSelection);
+      const activeLayerIndex =
+        tileMapTileSelection.kind === 'erase' ||
+        tileMapTileSelection.kind === 'picker'
+          ? getSafeLayerIndex(tileMapTileSelection.layerIndex)
+          : paintingSelection
+          ? getSafeLayerIndex(paintingSelection.layerIndex)
+          : 0;
+      const ensureActiveLayer = () => {
+        let layer = editableTileMap.getTileLayer(activeLayerIndex);
+        if (!layer) layer = editableTileMap.addNewTileLayer(activeLayerIndex);
+        return layer;
+      };
+      const getTileIdFromTileCoordinates = (tileCoordinates: {|
+        x: number,
+        y: number,
+      |}) =>
+        getTileIdFromGridCoordinates({
+          columnCount: tileSet.columnCount,
+          ...tileCoordinates,
+        });
+      const hasTileDefinition = (tileId: ?number): boolean =>
+        typeof tileId === 'number' && !!editableTileMap.getTileDefinition(tileId);
+      const getRandomTilePool = (): Array<{| x: number, y: number |}> => {
+        if (!paintingSelection || !paintingSelection.randomize) return [];
+        const topLeftCorner = paintingSelection.coordinates[0];
+        const bottomRightCorner = paintingSelection.coordinates[1];
+        const pool = [];
+        for (let x = topLeftCorner.x; x <= bottomRightCorner.x; x++) {
+          for (let y = topLeftCorner.y; y <= bottomRightCorner.y; y++) {
+            const tileId = getTileIdFromTileCoordinates({ x, y });
+            if (hasTileDefinition(tileId)) pool.push({ x, y });
+          }
+        }
+        return pool;
+      };
+      const randomTilePool = getRandomTilePool();
+      const pickTileIdToPaint = (
+        defaultTileCoordinates?: {| x: number, y: number |},
+        shouldRandomize: boolean = true
+      ): ?number => {
+        if (
+          shouldRandomize &&
+          paintingSelection &&
+          paintingSelection.randomize &&
+          randomTilePool.length > 0
+        ) {
+          const randomTileCoordinates =
+            randomTilePool[Math.floor(Math.random() * randomTilePool.length)];
+          return getTileIdFromTileCoordinates(randomTileCoordinates);
+        }
+        if (!defaultTileCoordinates) return null;
+        return getTileIdFromTileCoordinates(defaultTileCoordinates);
+      };
+      const getAutoTilePatternByMask = (): ?number[] => {
+        if (!paintingSelection || !paintingSelection.autoTile) return null;
+        const topLeftCorner = paintingSelection.coordinates[0];
+        const bottomRightCorner = paintingSelection.coordinates[1];
+        const selectionWidth = bottomRightCorner.x - topLeftCorner.x + 1;
+        const selectionHeight = bottomRightCorner.y - topLeftCorner.y + 1;
+        if (selectionWidth < 4 || selectionHeight < 4) return null;
+
+        const tileByMask = new Array(16).fill(-1);
+        for (let maskY = 0; maskY < 4; maskY++) {
+          for (let maskX = 0; maskX < 4; maskX++) {
+            const tileId = getTileIdFromTileCoordinates({
+              x: topLeftCorner.x + maskX,
+              y: topLeftCorner.y + maskY,
+            });
+            if (!hasTileDefinition(tileId)) return null;
+            tileByMask[maskY * 4 + maskX] = tileId;
+          }
+        }
+
+        return tileByMask;
+      };
+      const autoTilePatternByMask = getAutoTilePatternByMask();
+      const shouldRandomizeTiles =
+        !!paintingSelection &&
+        !!paintingSelection.randomize &&
+        randomTilePool.length > 0 &&
+        !autoTilePatternByMask;
+      const autoTileIds = autoTilePatternByMask
+        ? new Set(autoTilePatternByMask)
+        : null;
+      const applyAutoTiling = (paintedCellKeys: Set<string>) => {
+        if (!autoTilePatternByMask || !autoTileIds) return;
+        const layer = editableTileMap.getTileLayer(activeLayerIndex);
+        if (!layer) return;
+
+        const candidateCellKeys = new Set<string>();
+        paintedCellKeys.forEach(cellKey => {
+          const [xAsString, yAsString] = cellKey.split(',');
+          const x = parseInt(xAsString, 10);
+          const y = parseInt(yAsString, 10);
+          if (!Number.isInteger(x) || !Number.isInteger(y)) return;
+          candidateCellKeys.add(`${x},${y}`);
+          candidateCellKeys.add(`${x + 1},${y}`);
+          candidateCellKeys.add(`${x - 1},${y}`);
+          candidateCellKeys.add(`${x},${y + 1}`);
+          candidateCellKeys.add(`${x},${y - 1}`);
+        });
+
+        const isInsideLayerBounds = (x: number, y: number): boolean =>
+          x >= 0 &&
+          y >= 0 &&
+          x < editableTileMap.getDimensionX() &&
+          y < editableTileMap.getDimensionY();
+        const isTerrainTile = (x: number, y: number): boolean =>
+          isInsideLayerBounds(x, y) && autoTileIds.has(layer.getTileId(x, y));
+
+        candidateCellKeys.forEach(cellKey => {
+          const [xAsString, yAsString] = cellKey.split(',');
+          const x = parseInt(xAsString, 10);
+          const y = parseInt(yAsString, 10);
+          if (!Number.isInteger(x) || !Number.isInteger(y)) return;
+          if (!isInsideLayerBounds(x, y)) return;
+          if (!isTerrainTile(x, y)) return;
+
+          const mask =
+            (isTerrainTile(x, y - 1) ? 1 : 0) |
+            (isTerrainTile(x + 1, y) ? 2 : 0) |
+            (isTerrainTile(x, y + 1) ? 4 : 0) |
+            (isTerrainTile(x - 1, y) ? 8 : 0);
+          const tileId = autoTilePatternByMask[mask];
+          if (!hasTileDefinition(tileId)) return;
+          editableTileMap.setTile(x, y, activeLayerIndex, tileId);
+          editableTileMap.flipTileOnX(x, y, activeLayerIndex, false);
+          editableTileMap.flipTileOnY(x, y, activeLayerIndex, false);
+        });
+      };
+
       let shouldTrimAfterOperations = false;
 
       // Handle picker tool: select the tile that was clicked on the scene
@@ -1036,14 +1171,14 @@ export default class InstancesEditor extends Component<Props, State> {
         const clickX = topLeftCorner.x;
         const clickY = topLeftCorner.y;
 
-        const layer = editableTileMap.getTileLayer(0);
+        const layer = editableTileMap.getTileLayer(activeLayerIndex);
         if (!layer) return;
 
         // Get the tile ID at the clicked position
         const tileId = layer.getTileId(clickX, clickY);
 
-        // If there's no tile at this position, do nothing
-        if (tileId === -1) return;
+        // If there's no tile at this position, do nothing.
+        if (typeof tileId !== 'number' || tileId < 0) return;
 
         // Convert the tile ID to tileset grid coordinates
         const tilesetCoordinates = getGridCoordinatesFromTileId({
@@ -1055,7 +1190,13 @@ export default class InstancesEditor extends Component<Props, State> {
         const newSelection = createSelectionWithPreviousTool(
           this._previousToolBeforePicker,
           [tilesetCoordinates, tilesetCoordinates],
-          { horizontal: false, vertical: false }
+          {
+            horizontal: false,
+            vertical: false,
+            layerIndex: activeLayerIndex,
+            randomize: false,
+            autoTile: false,
+          }
         );
         this.props.onSelectTileMapTile(newSelection);
 
@@ -1071,32 +1212,42 @@ export default class InstancesEditor extends Component<Props, State> {
         const clickX = topLeftCorner.x;
         const clickY = topLeftCorner.y;
 
-        const layer = editableTileMap.getTileLayer(0);
-        if (!layer) return;
+        const existingLayer = editableTileMap.getTileLayer(activeLayerIndex);
 
         // Get the tile ID of the clicked position (the tile being replaced).
-        const targetTileId = layer.getTileId(clickX, clickY);
+        const targetTileId = existingLayer ? existingLayer.getTileId(clickX, clickY) : -1;
 
-        const newTileId = getTileIdFromGridCoordinates({
-          columnCount: tileSet.columnCount,
-          ...tileCoordinates,
-        });
-        const tileDefinition = editableTileMap.getTileDefinition(newTileId);
-        if (!tileDefinition) return;
+        const baseFloodFillTileId =
+          autoTilePatternByMask && hasTileDefinition(autoTilePatternByMask[0])
+            ? autoTilePatternByMask[0]
+            : pickTileIdToPaint(tileCoordinates, !autoTilePatternByMask);
+        if (!hasTileDefinition(baseFloodFillTileId)) return;
+        const shouldRandomizeFloodFill = shouldRandomizeTiles && !autoTilePatternByMask;
+        if (
+          !shouldRandomizeFloodFill &&
+          targetTileId === baseFloodFillTileId &&
+          !tileMapTileSelection.flipHorizontally &&
+          !tileMapTileSelection.flipVertically
+        ) {
+          return;
+        }
+        const layer = ensureActiveLayer();
 
         // BFS flood fill over tiles matching the target tile (4-directional).
         const dimX = editableTileMap.getDimensionX();
         const dimY = editableTileMap.getDimensionY();
         const queue: Array<{| x: number, y: number |}> = [];
         const visited = new Set<string>();
+        const autoTiledCells = new Set<string>();
 
         if (clickX >= 0 && clickX < dimX && clickY >= 0 && clickY < dimY) {
           queue.push({ x: clickX, y: clickY });
           visited.add(`${clickX},${clickY}`);
         }
 
-        while (queue.length > 0) {
-          const current = queue.shift();
+        let queueIndex = 0;
+        while (queueIndex < queue.length) {
+          const current = queue[queueIndex++];
 
           if (
             // $FlowFixMe[incompatible-use]
@@ -1114,24 +1265,38 @@ export default class InstancesEditor extends Component<Props, State> {
           const currentTileId = layer.getTileId(current.x, current.y);
           if (currentTileId !== targetTileId) continue;
 
+          const tileIdToPaint = shouldRandomizeFloodFill
+            ? pickTileIdToPaint(tileCoordinates, true)
+            : baseFloodFillTileId;
+          if (!hasTileDefinition(tileIdToPaint)) continue;
+
           // $FlowFixMe[incompatible-use]
-          editableTileMap.setTile(current.x, current.y, 0, newTileId);
+          editableTileMap.setTile(
+            current.x,
+            current.y,
+            activeLayerIndex,
+            tileIdToPaint
+          );
           editableTileMap.flipTileOnX(
             // $FlowFixMe[incompatible-use]
             current.x,
             // $FlowFixMe[incompatible-use]
             current.y,
-            0,
-            tileMapTileSelection.flipHorizontally
+            activeLayerIndex,
+            autoTilePatternByMask ? false : tileMapTileSelection.flipHorizontally
           );
           editableTileMap.flipTileOnY(
             // $FlowFixMe[incompatible-use]
             current.x,
             // $FlowFixMe[incompatible-use]
             current.y,
-            0,
-            tileMapTileSelection.flipVertically
+            activeLayerIndex,
+            autoTilePatternByMask ? false : tileMapTileSelection.flipVertically
           );
+          if (autoTilePatternByMask) {
+            // $FlowFixMe[incompatible-use]
+            autoTiledCells.add(`${current.x},${current.y}`);
+          }
 
           // Add neighbors if not already visited
           const neighbors = [
@@ -1153,29 +1318,23 @@ export default class InstancesEditor extends Component<Props, State> {
             }
           }
         }
-      } else if (getTileMapPaintingSelection(tileMapTileSelection)) {
-        const paintingSelection = getTileMapPaintingSelection(
-          tileMapTileSelection
-        );
-        if (!paintingSelection) return;
+        applyAutoTiling(autoTiledCells);
+      } else if (paintingSelection) {
         shouldTrimAfterOperations = editableTileMap.isEmpty();
         // TODO: Optimize list execution to make sure the most important size changing operations are done first.
         let cumulatedUnshiftedRows = 0,
           cumulatedUnshiftedColumns = 0;
-
-        const layer = editableTileMap.getTileLayer(0);
-        if (!layer) return;
+        const autoTiledCells = new Set<string>();
 
         tileMapGridCoordinates.forEach(
           ({ bottomRightCorner, topLeftCorner, tileCoordinates }) => {
             if (!tileCoordinates) return;
-            const tileId = getTileIdFromGridCoordinates({
-              columnCount: tileSet.columnCount,
-              ...tileCoordinates,
-            });
-
-            const tileDefinition = editableTileMap.getTileDefinition(tileId);
-            if (!tileDefinition) return;
+            const tileIdFromSelection =
+              autoTilePatternByMask && hasTileDefinition(autoTilePatternByMask[0])
+                ? autoTilePatternByMask[0]
+                : pickTileIdToPaint(tileCoordinates, false);
+            if (!hasTileDefinition(tileIdFromSelection) && !shouldRandomizeTiles)
+              return;
 
             for (
               let gridX = topLeftCorner.x;
@@ -1216,20 +1375,27 @@ export default class InstancesEditor extends Component<Props, State> {
                 }
                 const newX = x + columnsToUnshift;
                 const newY = y + rowsToUnshift;
+                const tileId = shouldRandomizeTiles
+                  ? pickTileIdToPaint(tileCoordinates, true)
+                  : tileIdFromSelection;
+                if (!hasTileDefinition(tileId)) continue;
 
-                editableTileMap.setTile(newX, newY, 0, tileId);
+                editableTileMap.setTile(newX, newY, activeLayerIndex, tileId);
                 editableTileMap.flipTileOnX(
                   newX,
                   newY,
-                  0,
-                  paintingSelection.flipHorizontally
+                  activeLayerIndex,
+                  autoTilePatternByMask ? false : paintingSelection.flipHorizontally
                 );
                 editableTileMap.flipTileOnY(
                   newX,
                   newY,
-                  0,
-                  paintingSelection.flipVertically
+                  activeLayerIndex,
+                  autoTilePatternByMask ? false : paintingSelection.flipVertically
                 );
+                if (autoTilePatternByMask) {
+                  autoTiledCells.add(`${newX},${newY}`);
+                }
 
                 cumulatedUnshiftedRows += rowsToUnshift;
                 cumulatedUnshiftedColumns += columnsToUnshift;
@@ -1261,7 +1427,10 @@ export default class InstancesEditor extends Component<Props, State> {
             }
           }
         );
+        applyAutoTiling(autoTiledCells);
       } else if (tileMapTileSelection.kind === 'erase') {
+        if (tileMapGridCoordinates.length === 0) return;
+        if (!editableTileMap.getTileLayer(activeLayerIndex)) return;
         const { bottomRightCorner, topLeftCorner } = tileMapGridCoordinates[0];
         for (
           let gridX = topLeftCorner.x;
@@ -1273,7 +1442,7 @@ export default class InstancesEditor extends Component<Props, State> {
             gridY <= bottomRightCorner.y;
             gridY++
           ) {
-            editableTileMap.removeTile(gridX, gridY, 0);
+            editableTileMap.removeTile(gridX, gridY, activeLayerIndex);
           }
         }
 
@@ -1283,7 +1452,9 @@ export default class InstancesEditor extends Component<Props, State> {
       }
 
       if (shouldTrimAfterOperations) {
-        const trimData = editableTileMap.trimEmptyColumnsAndRowToFitLayer(0);
+        const trimData = editableTileMap.trimEmptyColumnsAndRowToFitLayer(
+          activeLayerIndex
+        );
         if (trimData) {
           const {
             shiftedRows,

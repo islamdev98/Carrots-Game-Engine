@@ -20,6 +20,7 @@ import { useLongTouch, type ClientCoordinates } from '../Utils/UseLongTouch';
 import Text from '../UI/Text';
 import EmptyMessage from '../UI/EmptyMessage';
 import { isTileSetBadlyConfigured } from '../Utils/TileMap';
+import InlineCheckbox from '../UI/InlineCheckbox';
 
 const styles = {
   tilesetAndTooltipsContainer: {
@@ -212,18 +213,27 @@ export type TileMapPaintingSelection =
       coordinates: TileMapCoordinates[],
       flipHorizontally: boolean,
       flipVertically: boolean,
+      layerIndex?: number,
+      randomize?: boolean,
+      autoTile?: boolean,
     |}
   | {|
       kind: 'freehand',
       coordinates: TileMapCoordinates[],
       flipHorizontally: boolean,
       flipVertically: boolean,
+      layerIndex?: number,
+      randomize?: boolean,
+      autoTile?: boolean,
     |}
   | {|
       kind: 'floodfill',
       coordinates: TileMapCoordinates[],
       flipHorizontally: boolean,
       flipVertically: boolean,
+      layerIndex?: number,
+      randomize?: boolean,
+      autoTile?: boolean,
     |};
 
 export type TileMapTileSelection =
@@ -234,9 +244,11 @@ export type TileMapTileSelection =
   | TileMapPaintingSelection
   | {|
       kind: 'picker',
+      layerIndex?: number,
     |}
   | {|
       kind: 'erase',
+      layerIndex?: number,
     |};
 
 export const getTileMapPaintingSelection = (
@@ -265,22 +277,40 @@ export const isTileMapPaintingSelection = (
 export const createSelectionWithPreviousTool = (
   previousTool: ?TileMapTileSelection,
   coordinates: TileMapCoordinates[],
-  defaultFlips: {| horizontal: boolean, vertical: boolean |}
+  defaultSettings: {|
+    horizontal: boolean,
+    vertical: boolean,
+    layerIndex?: number,
+    randomize?: boolean,
+    autoTile?: boolean,
+  |}
 ): TileMapTileSelection => {
   const previousPaintingTool = getTileMapPaintingSelection(previousTool);
   const kind = previousPaintingTool ? previousPaintingTool.kind : 'rectangle';
   const flipHorizontally = previousPaintingTool
     ? previousPaintingTool.flipHorizontally
-    : defaultFlips.horizontal;
+    : defaultSettings.horizontal;
   const flipVertically = previousPaintingTool
     ? previousPaintingTool.flipVertically
-    : defaultFlips.vertical;
+    : defaultSettings.vertical;
+  const layerIndex = previousPaintingTool
+    ? previousPaintingTool.layerIndex || 0
+    : defaultSettings.layerIndex || 0;
+  const randomize = previousPaintingTool
+    ? !!previousPaintingTool.randomize
+    : !!defaultSettings.randomize;
+  const autoTile = previousPaintingTool
+    ? !!previousPaintingTool.autoTile
+    : !!defaultSettings.autoTile;
 
   return {
     kind: (kind: any),
     coordinates,
     flipHorizontally,
     flipVertically,
+    layerIndex,
+    randomize,
+    autoTile,
   };
 };
 
@@ -329,6 +359,13 @@ const TileSetVisualizer = ({
     shouldFlipHorizontally,
     setShouldFlipHorizontally,
   ] = React.useState<boolean>(false);
+  const [selectedLayerIndex, setSelectedLayerIndex] = React.useState<number>(0);
+  const [shouldRandomizePainting, setShouldRandomizePainting] = React.useState<boolean>(
+    false
+  );
+  const [shouldUseAutoTile, setShouldUseAutoTile] = React.useState<boolean>(
+    false
+  );
   const [
     lastSelection,
     setLastSelection,
@@ -361,6 +398,90 @@ const TileSetVisualizer = ({
     rowCount,
     tileSize,
   });
+  const makePaintingSelection = React.useCallback(
+    (
+      kind: 'freehand' | 'rectangle' | 'floodfill',
+      coordinates: TileMapCoordinates[]
+    ): TileMapTileSelection => ({
+      kind: (kind: any),
+      coordinates,
+      flipHorizontally: shouldFlipHorizontally,
+      flipVertically: shouldFlipVertically,
+      layerIndex: Math.max(0, Math.floor(selectedLayerIndex)),
+      randomize: shouldRandomizePainting,
+      autoTile: shouldUseAutoTile,
+    }),
+    [
+      selectedLayerIndex,
+      shouldFlipHorizontally,
+      shouldFlipVertically,
+      shouldRandomizePainting,
+      shouldUseAutoTile,
+    ]
+  );
+  const updateCurrentToolSelection = React.useCallback(
+    (
+      {
+        flipHorizontally,
+        flipVertically,
+        layerIndex,
+        randomize,
+        autoTile,
+      }: {|
+        flipHorizontally?: boolean,
+        flipVertically?: boolean,
+        layerIndex?: number,
+        randomize?: boolean,
+        autoTile?: boolean,
+      |}
+    ) => {
+      if (tileMapPaintingSelection) {
+        onSelectTileMapTile({
+          kind: (tileMapPaintingSelection.kind: any),
+          coordinates: (tileMapPaintingSelection.coordinates: TileMapCoordinates[]),
+          flipHorizontally:
+            typeof flipHorizontally === 'boolean'
+              ? flipHorizontally
+              : tileMapPaintingSelection.flipHorizontally,
+          flipVertically:
+            typeof flipVertically === 'boolean'
+              ? flipVertically
+              : tileMapPaintingSelection.flipVertically,
+          layerIndex:
+            typeof layerIndex === 'number'
+              ? Math.max(0, Math.floor(layerIndex))
+              : tileMapPaintingSelection.layerIndex || 0,
+          randomize:
+            typeof randomize === 'boolean'
+              ? randomize
+              : !!tileMapPaintingSelection.randomize,
+          autoTile:
+            typeof autoTile === 'boolean'
+              ? autoTile
+              : !!tileMapPaintingSelection.autoTile,
+        });
+        return;
+      }
+      if (tileMapTileSelection && tileMapTileSelection.kind === 'erase') {
+        onSelectTileMapTile({
+          kind: 'erase',
+          layerIndex:
+            typeof layerIndex === 'number'
+              ? Math.max(0, Math.floor(layerIndex))
+              : Math.max(0, Math.floor(tileMapTileSelection.layerIndex || 0)),
+        });
+        return;
+      }
+      if (tileMapTileSelection && tileMapTileSelection.kind === 'picker') {
+        if (typeof layerIndex !== 'number') return;
+        onSelectTileMapTile({
+          kind: 'picker',
+          layerIndex: Math.max(0, Math.floor(layerIndex)),
+        });
+      }
+    },
+    [tileMapPaintingSelection, tileMapTileSelection, onSelectTileMapTile]
+  );
   const startCoordinatesRef = React.useRef<?{|
     x: number,
     y: number,
@@ -582,6 +703,9 @@ const TileSetVisualizer = ({
             {
               horizontal: shouldFlipHorizontally,
               vertical: shouldFlipVertically,
+              layerIndex: selectedLayerIndex,
+              randomize: shouldRandomizePainting,
+              autoTile: shouldUseAutoTile,
             }
           );
           onSelectTileMapTile(newSelection);
@@ -643,22 +767,15 @@ const TileSetVisualizer = ({
             (tileMapTileSelection.kind === 'freehand' ||
               tileMapTileSelection.kind === 'floodfill')
           ) {
-            newSelection = ({
-              kind: (tileMapTileSelection.kind: any),
-              coordinates: ([
-                topLeftCorner,
-                bottomRightCorner,
-              ]: TileMapCoordinates[]),
-              flipHorizontally: shouldFlipHorizontally,
-              flipVertically: shouldFlipVertically,
-            }: TileMapTileSelection);
+            newSelection = makePaintingSelection(
+              (tileMapTileSelection.kind: any),
+              ([topLeftCorner, bottomRightCorner]: TileMapCoordinates[])
+            );
           } else {
-            newSelection = {
-              kind: 'rectangle',
-              coordinates: [topLeftCorner, bottomRightCorner],
-              flipHorizontally: shouldFlipHorizontally,
-              flipVertically: shouldFlipVertically,
-            };
+            newSelection = makePaintingSelection('rectangle', [
+              topLeftCorner,
+              bottomRightCorner,
+            ]);
           }
           onSelectTileMapTile(newSelection);
         }
@@ -677,8 +794,12 @@ const TileSetVisualizer = ({
       onSelectTileMapTile,
       shouldFlipHorizontally,
       shouldFlipVertically,
+      selectedLayerIndex,
+      shouldRandomizePainting,
+      shouldUseAutoTile,
       allowMultipleSelection,
       allowRectangleSelection,
+      makePaintingSelection,
     ]
   );
 
@@ -686,9 +807,24 @@ const TileSetVisualizer = ({
     () => {
       if (tileMapPaintingSelection) {
         setLastSelection(tileMapPaintingSelection);
+        setShouldFlipHorizontally(tileMapPaintingSelection.flipHorizontally);
+        setShouldFlipVertically(tileMapPaintingSelection.flipVertically);
+        setSelectedLayerIndex(
+          Math.max(0, Math.floor(tileMapPaintingSelection.layerIndex || 0))
+        );
+        setShouldRandomizePainting(!!tileMapPaintingSelection.randomize);
+        setShouldUseAutoTile(!!tileMapPaintingSelection.autoTile);
+      } else if (tileMapTileSelection && tileMapTileSelection.kind === 'erase') {
+        setSelectedLayerIndex(
+          Math.max(0, Math.floor(tileMapTileSelection.layerIndex || 0))
+        );
+      } else if (tileMapTileSelection && tileMapTileSelection.kind === 'picker') {
+        setSelectedLayerIndex(
+          Math.max(0, Math.floor(tileMapTileSelection.layerIndex || 0))
+        );
       }
     },
-    [tileMapPaintingSelection]
+    [tileMapPaintingSelection, tileMapTileSelection]
   );
 
   const onHoverAtlas = React.useCallback(
@@ -802,14 +938,14 @@ const TileSetVisualizer = ({
                   )
                     onSelectTileMapTile(null);
                   else
-                    onSelectTileMapTile({
-                      kind: 'freehand',
-                      coordinates: lastPaintingSelection
-                        ? lastPaintingSelection.coordinates
-                        : [{ x: 0, y: 0 }, { x: 0, y: 0 }],
-                      flipHorizontally: shouldFlipHorizontally,
-                      flipVertically: shouldFlipVertically,
-                    });
+                    onSelectTileMapTile(
+                      makePaintingSelection(
+                        'freehand',
+                        lastPaintingSelection
+                          ? lastPaintingSelection.coordinates
+                          : [{ x: 0, y: 0 }, { x: 0, y: 0 }]
+                      )
+                    );
                 }}
                 disabled={!isAtlasImageSet}
               >
@@ -831,16 +967,12 @@ const TileSetVisualizer = ({
                     onSelectTileMapTile(null);
                   else
                     onSelectTileMapTile(
-                      lastSelection && lastSelection.kind === 'rectangle'
-                        ? lastSelection
-                        : {
-                            kind: 'rectangle',
-                            coordinates: lastPaintingSelection
-                              ? lastPaintingSelection.coordinates
-                              : [{ x: 0, y: 0 }, { x: 0, y: 0 }],
-                            flipHorizontally: shouldFlipHorizontally,
-                            flipVertically: shouldFlipVertically,
-                          }
+                      makePaintingSelection(
+                        'rectangle',
+                        lastPaintingSelection
+                          ? lastPaintingSelection.coordinates
+                          : [{ x: 0, y: 0 }, { x: 0, y: 0 }]
+                      )
                     );
                 }}
                 disabled={!isAtlasImageSet}
@@ -862,14 +994,14 @@ const TileSetVisualizer = ({
                   )
                     onSelectTileMapTile(null);
                   else
-                    onSelectTileMapTile({
-                      kind: 'floodfill',
-                      coordinates: lastPaintingSelection
-                        ? lastPaintingSelection.coordinates
-                        : [{ x: 0, y: 0 }, { x: 0, y: 0 }],
-                      flipHorizontally: shouldFlipHorizontally,
-                      flipVertically: shouldFlipVertically,
-                    });
+                    onSelectTileMapTile(
+                      makePaintingSelection(
+                        'floodfill',
+                        lastPaintingSelection
+                          ? lastPaintingSelection.coordinates
+                          : [{ x: 0, y: 0 }, { x: 0, y: 0 }]
+                      )
+                    );
                 }}
                 disabled={!isAtlasImageSet}
               >
@@ -893,7 +1025,10 @@ const TileSetVisualizer = ({
                   } else {
                     // Store the current selection before switching to picker
                     previousToolRef.current = tileMapTileSelection;
-                    onSelectTileMapTile({ kind: 'picker' });
+                    onSelectTileMapTile({
+                      kind: 'picker',
+                      layerIndex: Math.max(0, Math.floor(selectedLayerIndex)),
+                    });
                   }
                 }}
                 disabled={!isAtlasImageSet}
@@ -914,7 +1049,11 @@ const TileSetVisualizer = ({
                     tileMapTileSelection.kind === 'erase'
                   )
                     onSelectTileMapTile(null);
-                  else onSelectTileMapTile({ kind: 'erase' });
+                  else
+                    onSelectTileMapTile({
+                      kind: 'erase',
+                      layerIndex: Math.max(0, Math.floor(selectedLayerIndex)),
+                    });
                 }}
               >
                 <Erase style={styles.icon} />
@@ -928,21 +1067,16 @@ const TileSetVisualizer = ({
                 selected={shouldFlipHorizontally}
                 disabled={
                   !tileMapTileSelection ||
+                  shouldUseAutoTile ||
                   tileMapTileSelection.kind === 'erase' ||
                   tileMapTileSelection.kind === 'picker'
                 }
                 onClick={e => {
                   const newShouldFlipHorizontally = !shouldFlipHorizontally;
                   setShouldFlipHorizontally(newShouldFlipHorizontally);
-                  if (tileMapPaintingSelection) {
-                    const selection: TileMapTileSelection = {
-                      kind: (tileMapPaintingSelection.kind: any),
-                      coordinates: (tileMapPaintingSelection.coordinates: TileMapCoordinates[]),
-                      flipHorizontally: newShouldFlipHorizontally,
-                      flipVertically: tileMapPaintingSelection.flipVertically,
-                    };
-                    onSelectTileMapTile(selection);
-                  }
+                  updateCurrentToolSelection({
+                    flipHorizontally: newShouldFlipHorizontally,
+                  });
                 }}
               >
                 <FlipHorizontal style={styles.icon} />
@@ -954,26 +1088,89 @@ const TileSetVisualizer = ({
                 selected={shouldFlipVertically}
                 disabled={
                   !tileMapTileSelection ||
+                  shouldUseAutoTile ||
                   tileMapTileSelection.kind === 'erase' ||
                   tileMapTileSelection.kind === 'picker'
                 }
                 onClick={e => {
                   const newShouldFlipVertically = !shouldFlipVertically;
                   setShouldFlipVertically(newShouldFlipVertically);
-                  if (tileMapPaintingSelection) {
-                    const selection: TileMapTileSelection = {
-                      kind: (tileMapPaintingSelection.kind: any),
-                      coordinates: (tileMapPaintingSelection.coordinates: TileMapCoordinates[]),
-                      flipHorizontally:
-                        tileMapPaintingSelection.flipHorizontally,
-                      flipVertically: newShouldFlipVertically,
-                    };
-                    onSelectTileMapTile(selection);
-                  }
+                  updateCurrentToolSelection({
+                    flipVertically: newShouldFlipVertically,
+                  });
                 }}
               >
                 <FlipVertical style={styles.icon} />
               </IconButton>
+            </LineStackLayout>
+          </Line>
+          <Line justifyContent="space-between" noMargin>
+            <LineStackLayout alignItems="left" noMargin>
+              <Text noMargin size="body-small">
+                <Trans>Layer</Trans>: {selectedLayerIndex}
+              </Text>
+              <IconButton
+                id="layerDown"
+                size="small"
+                tooltip={t`Decrease layer`}
+                onClick={() => {
+                  const nextLayerIndex = Math.max(0, selectedLayerIndex - 1);
+                  setSelectedLayerIndex(nextLayerIndex);
+                  updateCurrentToolSelection({ layerIndex: nextLayerIndex });
+                }}
+                disabled={!isAtlasImageSet || selectedLayerIndex <= 0}
+              >
+                <Text noMargin size="body-small">
+                  -
+                </Text>
+              </IconButton>
+              <IconButton
+                id="layerUp"
+                size="small"
+                tooltip={t`Increase layer`}
+                onClick={() => {
+                  const nextLayerIndex = selectedLayerIndex + 1;
+                  setSelectedLayerIndex(nextLayerIndex);
+                  updateCurrentToolSelection({ layerIndex: nextLayerIndex });
+                }}
+                disabled={!isAtlasImageSet}
+              >
+                <Text noMargin size="body-small">
+                  +
+                </Text>
+              </IconButton>
+            </LineStackLayout>
+            <LineStackLayout alignItems="right" noMargin>
+              <InlineCheckbox
+                id="randomizedPaintToggle"
+                checked={shouldRandomizePainting}
+                disabled={!isAtlasImageSet || !tileMapPaintingSelection}
+                label={<Trans>Random</Trans>}
+                onCheck={(e, checked) => {
+                  const nextAutoTile = checked ? false : shouldUseAutoTile;
+                  setShouldRandomizePainting(checked);
+                  setShouldUseAutoTile(nextAutoTile);
+                  updateCurrentToolSelection({
+                    randomize: checked,
+                    autoTile: nextAutoTile,
+                  });
+                }}
+              />
+              <InlineCheckbox
+                id="terrainAutoTileToggle"
+                checked={shouldUseAutoTile}
+                disabled={!isAtlasImageSet || !tileMapPaintingSelection}
+                label={<Trans>Auto terrain</Trans>}
+                onCheck={(e, checked) => {
+                  const nextRandomize = checked ? false : shouldRandomizePainting;
+                  setShouldUseAutoTile(checked);
+                  setShouldRandomizePainting(nextRandomize);
+                  updateCurrentToolSelection({
+                    autoTile: checked,
+                    randomize: nextRandomize,
+                  });
+                }}
+              />
             </LineStackLayout>
           </Line>
           <Spacer />
