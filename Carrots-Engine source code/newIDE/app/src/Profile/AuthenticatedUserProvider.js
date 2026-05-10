@@ -67,7 +67,6 @@ import { listNotifications } from '../Utils/GDevelopServices/Notification';
 import LoginWithPurchaseClaimDialog from './LoginWithPurchaseClaimDialog';
 import CreateAccountWithPurchaseClaimDialog from './CreateAccountWithPurchaseClaimDialog';
 import { type ClaimedProductOptions } from './PurchaseClaimDialog';
-import { isGDevelopAccountSystemDisabled } from '../Utils/AccountSecurityPolicy';
 type Props = {|
   authentication: Authentication,
   preferencesValues: PreferencesValues,
@@ -153,11 +152,6 @@ export default class AuthenticatedUserProvider extends React.Component<
   >);
 
   async componentDidMount() {
-    if (isGDevelopAccountSystemDisabled()) {
-      this._initializeAuthenticatedUser();
-      return;
-    }
-
     // Wait for Firebase to complete its initial auth check before doing anything.
     // This prevents a race condition where we check auth state before Firebase
     // has finished initializing, causing us to incorrectly think the user is logged out.
@@ -219,27 +213,6 @@ export default class AuthenticatedUserProvider extends React.Component<
 
   // This should be called only on the first mount of the provider.
   _initializeAuthenticatedUser() {
-    if (isGDevelopAccountSystemDisabled()) {
-      this.setState({
-        authenticatedUser: {
-          ...initialAuthenticatedUser,
-          ...authenticatedUserLoggedOutAttributes,
-          recommendations: [],
-          getAuthorizationHeader: () =>
-            this.props.authentication.getAuthorizationHeader(),
-        },
-        loginDialogOpen: false,
-        loginWithPurchaseClaimDialogOpen: false,
-        createAccountDialogOpen: false,
-        createAccountWithPurchaseClaimDialogOpen: false,
-        editProfileDialogOpen: false,
-        emailVerificationDialogOpen: false,
-        changeEmailDialogOpen: false,
-      });
-      this._hasNotifiedUserAboutEmailVerification = false;
-      return;
-    }
-
     this._fetchAchievements();
     this.setState(({ authenticatedUser }) => ({
       authenticatedUser: {
@@ -1761,12 +1734,10 @@ export default class AuthenticatedUserProvider extends React.Component<
   };
 
   render(): any {
-    const accountSystemDisabled = isGDevelopAccountSystemDisabled();
-
     return (
       <AuthenticatedUserContext.Provider value={this.state.authenticatedUser}>
         {this.props.children}
-        {!accountSystemDisabled && this.state.loginDialogOpen && (
+        {this.state.loginDialogOpen && (
           <LoginDialog
             onClose={() => {
               this._cancelLoginOrSignUp();
@@ -1780,8 +1751,7 @@ export default class AuthenticatedUserProvider extends React.Component<
             onForgotPassword={this._doForgotPassword}
           />
         )}
-        {!accountSystemDisabled &&
-          this.state.loginWithPurchaseClaimDialogOpen &&
+        {this.state.loginWithPurchaseClaimDialogOpen &&
           this.state.authenticatedUser.claimedProductOptions && (
             <LoginWithPurchaseClaimDialog
               onClose={() => {
@@ -1804,8 +1774,7 @@ export default class AuthenticatedUserProvider extends React.Component<
               }
             />
           )}
-        {!accountSystemDisabled &&
-          this.state.authenticatedUser.profile &&
+        {this.state.authenticatedUser.profile &&
           this.state.editProfileDialogOpen && (
             <EditProfileDialog
               profile={this.state.authenticatedUser.profile}
@@ -1853,8 +1822,7 @@ export default class AuthenticatedUserProvider extends React.Component<
               error={this.state.apiCallError}
             />
           )}
-        {!accountSystemDisabled &&
-          this.state.authenticatedUser.firebaseUser &&
+        {this.state.authenticatedUser.firebaseUser &&
           this.state.changeEmailDialogOpen && (
             <ChangeEmailDialog
               firebaseUser={this.state.authenticatedUser.firebaseUser}
@@ -1864,7 +1832,7 @@ export default class AuthenticatedUserProvider extends React.Component<
               error={this.state.apiCallError}
             />
           )}
-        {!accountSystemDisabled && this.state.createAccountDialogOpen && (
+        {this.state.createAccountDialogOpen && (
           <CreateAccountDialog
             onClose={() => {
               this._cancelLoginOrSignUp();
@@ -1879,8 +1847,7 @@ export default class AuthenticatedUserProvider extends React.Component<
             error={this.state.apiCallError}
           />
         )}
-        {!accountSystemDisabled &&
-          this.state.createAccountWithPurchaseClaimDialogOpen &&
+        {this.state.createAccountWithPurchaseClaimDialogOpen &&
           this.state.authenticatedUser.claimedProductOptions && (
             <CreateAccountWithPurchaseClaimDialog
               onClose={() => {
@@ -1904,7 +1871,7 @@ export default class AuthenticatedUserProvider extends React.Component<
               }
             />
           )}
-        {!accountSystemDisabled && this.state.emailVerificationDialogOpen && (
+        {this.state.emailVerificationDialogOpen && (
           <EmailVerificationDialog
             authenticatedUser={this.state.authenticatedUser}
             onClose={() => {

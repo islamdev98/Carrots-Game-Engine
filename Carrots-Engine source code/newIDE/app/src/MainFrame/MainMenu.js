@@ -15,7 +15,6 @@ import { getElectronAccelerator } from '../KeyboardShortcuts';
 import { isMacLike } from '../Utils/Platform';
 import Window from '../Utils/Window';
 import optionalRequire from '../Utils/OptionalRequire';
-import { isGDevelopAccountSystemDisabled } from '../Utils/AccountSecurityPolicy';
 const electron = optionalRequire('electron');
 
 const isDesktop = !!electron;
@@ -317,14 +316,10 @@ export const buildMainMenuDeclarativeTemplate = ({
           onClickSendEvent: 'main-menu-open-about',
         },
         { type: 'separator' },
-        ...(isGDevelopAccountSystemDisabled()
-          ? []
-          : [
-              {
-                label: i18n._(t`My Profile`),
-                onClickSendEvent: 'main-menu-open-profile',
-              },
-            ]),
+        {
+          label: i18n._(t`My Profile`),
+          onClickSendEvent: 'main-menu-open-profile',
+        },
         {
           label: i18n._(t`Preferences`),
           onClickSendEvent: 'main-menu-open-preferences',

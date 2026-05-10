@@ -1673,16 +1673,7 @@ export class EventsSheetComponentWithoutHandle extends React.Component<
 
   _createBlueprintTemplateNode = (
     eventContext: EventContext,
-    templateId:
-      | 'add-force'
-      | 'set-velocity'
-      | 'lerp'
-      | 'branch'
-      | 'sequence'
-      | 'math-add'
-      | 'math-subtract'
-      | 'math-multiply'
-      | 'math-divide'
+    templateId: 'add-force' | 'set-velocity' | 'lerp' | 'branch' | 'sequence'
   ) => {
     const event = eventContext.event;
     const instructionLists = this._getBlueprintInstructionListsFromEvent(event);
@@ -1730,38 +1721,6 @@ export class EventsSheetComponentWithoutHandle extends React.Component<
         instructionLists.conditionInstructionsList,
         'BuiltinCommonInstructions::CompareNumbers',
         ['1', '=', '1']
-      );
-      didMutate = true;
-    } else if (templateId === 'math-add' && instructionLists) {
-      if (!instructionLists.actionInstructionsList) return;
-      this._insertBlueprintInstruction(
-        instructionLists.actionInstructionsList,
-        'ModVarScene',
-        ['Score', '+', '1']
-      );
-      didMutate = true;
-    } else if (templateId === 'math-subtract' && instructionLists) {
-      if (!instructionLists.actionInstructionsList) return;
-      this._insertBlueprintInstruction(
-        instructionLists.actionInstructionsList,
-        'ModVarScene',
-        ['Score', '-', '1']
-      );
-      didMutate = true;
-    } else if (templateId === 'math-multiply' && instructionLists) {
-      if (!instructionLists.actionInstructionsList) return;
-      this._insertBlueprintInstruction(
-        instructionLists.actionInstructionsList,
-        'ModVarScene',
-        ['Score', '*', '2']
-      );
-      didMutate = true;
-    } else if (templateId === 'math-divide' && instructionLists) {
-      if (!instructionLists.actionInstructionsList) return;
-      this._insertBlueprintInstruction(
-        instructionLists.actionInstructionsList,
-        'ModVarScene',
-        ['Score', '/', '2']
       );
       didMutate = true;
     } else if (templateId === 'sequence') {
