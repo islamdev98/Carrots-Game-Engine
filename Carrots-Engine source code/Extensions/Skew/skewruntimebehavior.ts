@@ -124,6 +124,33 @@ namespace gdjs {
       this.setSkewX(this._skewX + deltaSkewXDegrees);
     }
 
+    interpolateSkewX(
+      targetSkewXDegrees: number,
+      interpolationFactor: number
+    ): void {
+      if (
+        !Number.isFinite(targetSkewXDegrees) ||
+        !Number.isFinite(interpolationFactor)
+      ) {
+        return;
+      }
+
+      const clampedInterpolationFactor = this._clamp(interpolationFactor, 0, 1);
+      if (clampedInterpolationFactor === 0) return;
+      if (clampedInterpolationFactor === 1) {
+        this.setSkewX(targetSkewXDegrees);
+        return;
+      }
+
+      this.setSkewX(
+        gdjs.evtTools.common.lerp(
+          this._skewX,
+          targetSkewXDegrees,
+          clampedInterpolationFactor
+        )
+      );
+    }
+
     getSkewY(): number {
       return this._skewY;
     }
@@ -141,6 +168,33 @@ namespace gdjs {
       this.setSkewY(this._skewY + deltaSkewYDegrees);
     }
 
+    interpolateSkewY(
+      targetSkewYDegrees: number,
+      interpolationFactor: number
+    ): void {
+      if (
+        !Number.isFinite(targetSkewYDegrees) ||
+        !Number.isFinite(interpolationFactor)
+      ) {
+        return;
+      }
+
+      const clampedInterpolationFactor = this._clamp(interpolationFactor, 0, 1);
+      if (clampedInterpolationFactor === 0) return;
+      if (clampedInterpolationFactor === 1) {
+        this.setSkewY(targetSkewYDegrees);
+        return;
+      }
+
+      this.setSkewY(
+        gdjs.evtTools.common.lerp(
+          this._skewY,
+          targetSkewYDegrees,
+          clampedInterpolationFactor
+        )
+      );
+    }
+
     setSkew(skewXDegrees: number, skewYDegrees: number): void {
       if (!Number.isFinite(skewXDegrees) || !Number.isFinite(skewYDegrees)) {
         return;
@@ -150,6 +204,40 @@ namespace gdjs {
       this._skewY = skewYDegrees;
       this._dirty = true;
       this._applyOrRestoreSkew();
+    }
+
+    interpolateSkew(
+      targetSkewXDegrees: number,
+      targetSkewYDegrees: number,
+      interpolationFactor: number
+    ): void {
+      if (
+        !Number.isFinite(targetSkewXDegrees) ||
+        !Number.isFinite(targetSkewYDegrees) ||
+        !Number.isFinite(interpolationFactor)
+      ) {
+        return;
+      }
+
+      const clampedInterpolationFactor = this._clamp(interpolationFactor, 0, 1);
+      if (clampedInterpolationFactor === 0) return;
+      if (clampedInterpolationFactor === 1) {
+        this.setSkew(targetSkewXDegrees, targetSkewYDegrees);
+        return;
+      }
+
+      this.setSkew(
+        gdjs.evtTools.common.lerp(
+          this._skewX,
+          targetSkewXDegrees,
+          clampedInterpolationFactor
+        ),
+        gdjs.evtTools.common.lerp(
+          this._skewY,
+          targetSkewYDegrees,
+          clampedInterpolationFactor
+        )
+      );
     }
 
     resetSkew(): void {
@@ -164,6 +252,10 @@ namespace gdjs {
         return null;
       }
       return owner.getRendererObject() || null;
+    }
+
+    private _clamp(value: number, min: number, max: number): number {
+      return Math.max(min, Math.min(max, value));
     }
 
     private _canApplySkew(

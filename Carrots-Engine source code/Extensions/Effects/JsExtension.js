@@ -862,6 +862,109 @@ module.exports = {
       .setLabel(_('Opacity (between 0 and 1)'))
       .setType('number');
 
+    const normalMap2DEffect = extension
+      .addEffect('NormalMap2D')
+      .setFullName(_('Normal Map 2D'))
+      .setDescription(
+        _('Apply dynamic per-pixel 2D lighting using a normal map texture.')
+      )
+      .markAsOnlyWorkingFor2D()
+      .addIncludeFile('Extensions/Effects/normal-map-2d-pixi-filter.js');
+    const normalMap2DProperties = normalMap2DEffect.getProperties();
+    normalMap2DProperties
+      .getOrCreate('normalMapTexture')
+      .setType('resource')
+      .addExtraInfo('image')
+      .setLabel(_('Normal map texture'))
+      .setDescription(
+        _(
+          'The normal map texture used for lighting details. Purple/blue tangent-space normal maps are recommended.'
+        )
+      );
+    normalMap2DProperties
+      .getOrCreate('lightAngle')
+      .setValue('315')
+      .setLabel(_('Light angle (degrees)'))
+      .setType('number');
+    normalMap2DProperties
+      .getOrCreate('lightElevation')
+      .setValue('45')
+      .setLabel(_('Light elevation (between -90 and 90)'))
+      .setType('number');
+    normalMap2DProperties
+      .getOrCreate('lightIntensity')
+      .setValue('1')
+      .setLabel(_('Light intensity (between 0 and 8)'))
+      .setType('number');
+    normalMap2DProperties
+      .getOrCreate('ambientIntensity')
+      .setValue('0.35')
+      .setLabel(_('Ambient intensity (between 0 and 4)'))
+      .setType('number');
+    normalMap2DProperties
+      .getOrCreate('normalStrength')
+      .setValue('1')
+      .setLabel(_('Normal strength (between 0 and 8)'))
+      .setType('number');
+    normalMap2DProperties
+      .getOrCreate('specularStrength')
+      .setValue('0.35')
+      .setLabel(_('Specular strength (between 0 and 4)'))
+      .setType('number');
+    normalMap2DProperties
+      .getOrCreate('shininess')
+      .setValue('24')
+      .setLabel(_('Shininess (between 1 and 256)'))
+      .setType('number');
+    normalMap2DProperties
+      .getOrCreate('mix')
+      .setValue('100')
+      .setLabel(_('Mix (between 0 and 100)'))
+      .setType('number')
+      .setDescription(
+        _('How much the lighting result affects the final color.')
+      );
+    normalMap2DProperties
+      .getOrCreate('lightColor')
+      .setValue('255;255;255')
+      .setLabel(_('Light color'))
+      .setType('color');
+    normalMap2DProperties
+      .getOrCreate('ambientColor')
+      .setValue('255;255;255')
+      .setLabel(_('Ambient color'))
+      .setType('color');
+    normalMap2DProperties
+      .getOrCreate('invertY')
+      .setValue('false')
+      .setLabel(_('Invert normal Y channel'))
+      .setType('boolean')
+      .setGroup(_('Advanced'));
+    normalMap2DProperties
+      .getOrCreate('uvScaleX')
+      .setValue('1')
+      .setLabel(_('UV scale X'))
+      .setType('number')
+      .setGroup(_('Advanced'));
+    normalMap2DProperties
+      .getOrCreate('uvScaleY')
+      .setValue('1')
+      .setLabel(_('UV scale Y'))
+      .setType('number')
+      .setGroup(_('Advanced'));
+    normalMap2DProperties
+      .getOrCreate('uvOffsetX')
+      .setValue('0')
+      .setLabel(_('UV offset X'))
+      .setType('number')
+      .setGroup(_('Advanced'));
+    normalMap2DProperties
+      .getOrCreate('uvOffsetY')
+      .setValue('0')
+      .setLabel(_('UV offset Y'))
+      .setType('number')
+      .setGroup(_('Advanced'));
+
     const noiseEffect = extension
       .addEffect('Noise')
       .setFullName(_('Noise'))

@@ -4,6 +4,9 @@
 /** @type {ExtensionModule} */
 module.exports = {
   createExtension: function (_, gd) {
+    const normalMapIconPath = 'JsPlatform/Extensions/normal_map_2d.svg';
+    const normalMapActionIcon = 'res/actions/effect_black.svg';
+
     const extension = new gd.PlatformExtension();
     extension
       .setExtensionInformation(
@@ -23,7 +26,7 @@ module.exports = {
       .setTags('normal map, lighting, 2d, shader');
     extension
       .addInstructionOrExpressionGroupMetadata(_('2D Normal Map'))
-      .setIcon('res/actions/position24.png');
+      .setIcon(normalMapIconPath);
 
     const normalMapBehavior = new gd.BehaviorJsImplementation();
 
@@ -185,7 +188,9 @@ module.exports = {
         .setLabel(_('Enabled'));
       behaviorProperties
         .getOrCreate('normalMapResource')
-        .setValue(behaviorContent.getChild('normalMapResource').getStringValue())
+        .setValue(
+          behaviorContent.getChild('normalMapResource').getStringValue()
+        )
         .setType('resource')
         .addExtraInfo('image')
         .setLabel(_('Normal map image'));
@@ -223,10 +228,7 @@ module.exports = {
       behaviorProperties
         .getOrCreate('normalStrength')
         .setValue(
-          behaviorContent
-            .getChild('normalStrength')
-            .getDoubleValue()
-            .toString()
+          behaviorContent.getChild('normalStrength').getDoubleValue().toString()
         )
         .setType('Number')
         .setLabel(_('Normal strength'));
@@ -319,7 +321,7 @@ module.exports = {
           'Apply normal map lighting to this object. Works with Sprite, Tiled Sprite, Panel Sprite, Tile Map and external tile maps.'
         ),
         '',
-        'res/actions/position24.png',
+        normalMapActionIcon,
         'NormalMapBehavior',
         // @ts-ignore - BehaviorJsImplementation is valid here.
         normalMapBehavior,
@@ -334,8 +336,8 @@ module.exports = {
         _('Enable or disable normal map rendering for this object.'),
         _('Set 2D normal map behavior of _PARAM0_ to _PARAM2_'),
         _('Normal Map'),
-        'res/actions/position24.png',
-        'res/actions/position24.png'
+        normalMapActionIcon,
+        normalMapActionIcon
       )
       .addParameter('object', _('Object'), '', false)
       .addParameter('behavior', _('Behavior'), 'NormalMapBehavior')
@@ -349,8 +351,8 @@ module.exports = {
         _('Completely disable normal map on this object.'),
         _('Completely disable normal map on _PARAM0_'),
         _('Normal Map'),
-        'res/actions/position24.png',
-        'res/actions/position24.png'
+        normalMapActionIcon,
+        normalMapActionIcon
       )
       .addParameter('object', _('Object'), '', false)
       .addParameter('behavior', _('Behavior'), 'NormalMapBehavior')
@@ -363,8 +365,8 @@ module.exports = {
         _('Check if this behavior is enabled.'),
         _('2D normal map behavior is enabled for _PARAM0_'),
         _('Normal Map'),
-        'res/actions/position24.png',
-        'res/actions/position24.png'
+        normalMapActionIcon,
+        normalMapActionIcon
       )
       .addParameter('object', _('Object'), '', false)
       .addParameter('behavior', _('Behavior'), 'NormalMapBehavior')
@@ -377,8 +379,8 @@ module.exports = {
         _('Set the normal map image resource used by this object.'),
         _('Set normal map image of _PARAM0_ to _PARAM2_'),
         _('Normal Map'),
-        'res/actions/position24.png',
-        'res/actions/position24.png'
+        normalMapActionIcon,
+        normalMapActionIcon
       )
       .addParameter('object', _('Object'), '', false)
       .addParameter('behavior', _('Behavior'), 'NormalMapBehavior')
@@ -394,8 +396,8 @@ module.exports = {
         ),
         _('_PARAM0_ has a valid normal map image'),
         _('Normal Map'),
-        'res/actions/position24.png',
-        'res/actions/position24.png'
+        normalMapActionIcon,
+        normalMapActionIcon
       )
       .addParameter('object', _('Object'), '', false)
       .addParameter('behavior', _('Behavior'), 'NormalMapBehavior')
@@ -407,7 +409,7 @@ module.exports = {
         _('Normal map image resource'),
         _('the normal map image resource name'),
         _('Normal Map'),
-        'res/actions/position24.png'
+        normalMapActionIcon
       )
       .addParameter('object', _('Object'), '', false)
       .addParameter('behavior', _('Behavior'), 'NormalMapBehavior')
@@ -420,8 +422,8 @@ module.exports = {
         _('Invert (or not) the Y channel of sampled normal map.'),
         _('Set invert normal Y of _PARAM0_ to _PARAM2_'),
         _('Normal Map'),
-        'res/actions/position24.png',
-        'res/actions/position24.png'
+        normalMapActionIcon,
+        normalMapActionIcon
       )
       .addParameter('object', _('Object'), '', false)
       .addParameter('behavior', _('Behavior'), 'NormalMapBehavior')
@@ -435,8 +437,8 @@ module.exports = {
         _('Check if normal map Y channel is inverted.'),
         _('Invert normal Y is enabled for _PARAM0_'),
         _('Normal Map'),
-        'res/actions/position24.png',
-        'res/actions/position24.png'
+        normalMapActionIcon,
+        normalMapActionIcon
       )
       .addParameter('object', _('Object'), '', false)
       .addParameter('behavior', _('Behavior'), 'NormalMapBehavior')
@@ -459,7 +461,7 @@ module.exports = {
           shortDescription,
           sentenceName,
           _('Normal Map'),
-          'res/actions/position24.png'
+          normalMapActionIcon
         )
         .addParameter('object', _('Object'), '', false)
         .addParameter('behavior', _('Behavior'), 'NormalMapBehavior')
@@ -602,16 +604,8 @@ module.exports = {
         'ambientIntensity',
         '0.4'
       ),
-      gd.ProjectHelper.sanityCheckBehaviorProperty(
-        behavior,
-        'invertY',
-        'true'
-      ),
-      gd.ProjectHelper.sanityCheckBehaviorProperty(
-        behavior,
-        'uvScaleX',
-        '2.5'
-      ),
+      gd.ProjectHelper.sanityCheckBehaviorProperty(behavior, 'invertY', 'true'),
+      gd.ProjectHelper.sanityCheckBehaviorProperty(behavior, 'uvScaleX', '2.5'),
     ];
   },
 };

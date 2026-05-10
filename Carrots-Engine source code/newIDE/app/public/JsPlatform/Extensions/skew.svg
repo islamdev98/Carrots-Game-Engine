@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="skewBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b2a3a" />
+      <stop offset="1" stop-color="#0e1724" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="url(#skewBg)" />
+  <path d="M16 46V18h20l12 8v20H28z" fill="#2f9cff" opacity="0.2" />
+  <path
+    d="M16 46V18h20l12 8v20H28z"
+    fill="none"
+    stroke="#7ec4ff"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+  <line
+    x1="16"
+    y1="46"
+    x2="48"
+    y2="46"
+    stroke="#9be15d"
+    stroke-width="3"
+    stroke-linecap="round"
+  />
+  <line
+    x1="16"
+    y1="46"
+    x2="16"
+    y2="18"
+    stroke="#f5c451"
+    stroke-width="3"
+    stroke-linecap="round"
+  />
+</svg>

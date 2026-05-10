@@ -85,6 +85,33 @@ describe('gdjs.SkewRuntimeBehavior', () => {
     );
   });
 
+  it('interpolates skew values with clamped factors', () => {
+    const runtimeScene = createScene();
+    const object = addObject(runtimeScene, { skewX: 0, skewY: 0 });
+    const rendererObject = createRendererObject();
+    object.getRendererObject = () => rendererObject;
+    // @ts-ignore
+    const behavior = object.getBehavior(behaviorName);
+
+    behavior.interpolateSkewX(10, 0.5);
+    behavior.interpolateSkewY(-20, 0.25);
+    runtimeScene.renderAndStep(1000 / 60);
+
+    expect(behavior.getSkewX()).to.be(5);
+    expect(behavior.getSkewY()).to.be(-5);
+
+    behavior.interpolateSkew(40, 10, 2); // Clamped to 1.
+    runtimeScene.renderAndStep(1000 / 60);
+
+    expect(behavior.getSkewX()).to.be(40);
+    expect(behavior.getSkewY()).to.be(10);
+
+    behavior.interpolateSkewX(0, -3); // Clamped to 0.
+    runtimeScene.renderAndStep(1000 / 60);
+
+    expect(behavior.getSkewX()).to.be(40);
+  });
+
   it('restores previous skew when disabled', () => {
     const runtimeScene = createScene();
     const object = addObject(runtimeScene, { skewX: 25, skewY: 12 });

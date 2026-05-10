@@ -222,6 +222,13 @@ const jsExtensions = [
     objectsRenderingServiceModules: {},
   },
   {
+    name: 'NormalMap2D',
+    // $FlowFixMe[incompatible-type] - this path is ignored for Flow.
+    // $FlowFixMe[cannot-resolve-module]
+    extensionModule: require('GDJS-for-web-app-only/Runtime/Extensions/NormalMap2D/JsExtension.js'),
+    objectsRenderingServiceModules: {},
+  },
+  {
     name: 'TextInput',
     // $FlowFixMe[incompatible-type] - this path is ignored for Flow.
     // $FlowFixMe[cannot-resolve-module]
