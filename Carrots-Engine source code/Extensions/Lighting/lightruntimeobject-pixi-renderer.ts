@@ -29,6 +29,32 @@ namespace gdjs {
      */
     _lightBoundingPoly: gdjs.Polygon;
 
+    /**
+     * Pool of reusable FloatPoint arrays to avoid per-frame allocations
+     * inside _computeClosestIntersectionPoint. Reset each call to
+     * _computeLightVertices.
+     */
+    _closestPointsPool: FloatPoint[] = [];
+    _closestPointsPoolIndex: integer = 0;
+
+    /**
+     * Flat array of precomputed AABBs for obstacle polygons, laid out as
+     * [minX, minY, maxX, maxY, minX, minY, ...] (4 floats per polygon).
+     * Rebuilt each _computeLightVertices call to allow cheap AABB rejection
+     * in _computeClosestIntersectionPoint before the full raycast.
+     */
+    _obstaclePolygonsAABB: Float32Array = new Float32Array(0);
+
+    // Reusable arrays for _computeLightVertices — cleared and refilled each call
+    // to avoid per-frame heap allocations that would otherwise pressure the GC.
+    _lightObstaclesTemp: gdjs.LightObstacleRuntimeBehavior[] = [];
+    _obstaclePolygonsTemp: gdjs.Polygon[] = [];
+    _flattenVerticesTemp: FloatPoint[] = [];
+    _closestVerticesTemp: { vertex: FloatPoint; angle: float }[] = [];
+    _closestVertexAnglePool: { vertex: FloatPoint; angle: float }[] = [];
+    _closestVertexAnglePoolIndex: integer = 0;
+    _filteredVerticesTemp: FloatPoint[] = [];
+
     constructor(
       runtimeObject: gdjs.LightRuntimeObject,
       instanceContainer: gdjs.RuntimeInstanceContainer
