@@ -1,0 +1,20 @@
+{
+  "tier": "community",
+  "authorIds": [],
+  "extensionNamespace": "",
+  "fullName": "Collectible",
+  "name": "Collectible",
+  "version": "0.0.1",
+  "url": "/extensions/Collectible.json",
+  "headerUrl": "/extensions/Collectible-header.json",
+  "tags": [],
+  "category": "Other",
+  "previewIconUrl": "",
+  "gdevelopVersion": ">=5.5.0",
+  "shortDescription": "",
+  "eventsBasedBehaviorsCount": 1,
+  "eventsFunctionsCount": 0,
+  "helpPath": "",
+  "description": "",
+  "iconUrl": ""
+}

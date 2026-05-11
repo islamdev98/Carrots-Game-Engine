@@ -1,0 +1,20 @@
+{
+  "tier": "community",
+  "authorIds": [],
+  "extensionNamespace": "",
+  "fullName": "Background",
+  "name": "Background",
+  "version": "0.0.1",
+  "url": "/extensions/Background.json",
+  "headerUrl": "/extensions/Background-header.json",
+  "tags": [],
+  "category": "Other",
+  "previewIconUrl": "",
+  "gdevelopVersion": ">=5.5.0",
+  "shortDescription": "Originally automatically extracted from events of the project",
+  "eventsBasedBehaviorsCount": 0,
+  "eventsFunctionsCount": 1,
+  "helpPath": "",
+  "description": "Originally automatically extracted from events of the project",
+  "iconUrl": ""
+}

@@ -1,0 +1,204 @@
+{
+  "author": "",
+  "category": "",
+  "extensionNamespace": "",
+  "fullName": "Background",
+  "gdevelopVersion": "",
+  "helpPath": "",
+  "iconUrl": "",
+  "name": "Background",
+  "previewIconUrl": "",
+  "shortDescription": "",
+  "version": "",
+  "description": "Originally automatically extracted from events of the project",
+  "tags": [],
+  "authorIds": [],
+  "dependencies": [],
+  "globalVariables": [],
+  "sceneVariables": [],
+  "eventsFunctions": [
+    {
+      "fullName": "Create objects on cylinder",
+      "functionType": "Action",
+      "name": "CreateObjectOnCylinder",
+      "sentence": "Create _PARAM1_ _PARAM4_ times around _PARAM5_ ; _PARAM6_ at a distance from _PARAM7_ to _PARAM8_ and an elevation from _PARAM9_ to _PARAM10_",
+      "events": [
+        {
+          "type": "BuiltinCommonInstructions::Repeat",
+          "repeatExpression": "ObjectCount",
+          "conditions": [],
+          "actions": [
+            {
+              "type": {
+                "value": "Create"
+              },
+              "parameters": [
+                "",
+                "Cloud",
+                "0",
+                "0",
+                ""
+              ]
+            },
+            {
+              "type": {
+                "value": "SetAngle"
+              },
+              "parameters": [
+                "Cloud",
+                "=",
+                "RandomFloat(360)"
+              ]
+            },
+            {
+              "type": {
+                "value": "MettreAutourPos"
+              },
+              "parameters": [
+                "Cloud",
+                "CenterX",
+                "CenterY",
+                "RandomFloatInRange(RadiusMin, RadiusMax)",
+                "Cloud.Angle()"
+              ]
+            },
+            {
+              "type": {
+                "value": "SetAngle"
+              },
+              "parameters": [
+                "Cloud",
+                "+",
+                "RandomFloatInRange(-15, 15)"
+              ]
+            },
+            {
+              "type": {
+                "value": "Scene3D::Base3DBehavior::SetRotationY"
+              },
+              "parameters": [
+                "Cloud",
+                "Object3D",
+                "=",
+                "RandomFloatInRange(-30, -15)"
+              ]
+            },
+            {
+              "type": {
+                "value": "Scene3D::Base3DBehavior::SetZ"
+              },
+              "parameters": [
+                "Cloud",
+                "Object3D",
+                "=",
+                "RandomFloatInRange(MinZ, MaxZ)"
+              ]
+            },
+            {
+              "type": {
+                "value": "ScalableCapability::ScalableBehavior::SetValue"
+              },
+              "parameters": [
+                "Cloud",
+                "Scale",
+                "=",
+                "RandomFloatInRange(0.5, 2)"
+              ]
+            },
+            {
+              "type": {
+                "value": "ScalableCapability::ScalableBehavior::SetX"
+              },
+              "parameters": [
+                "Cloud",
+                "Scale",
+                "*",
+                "RandomFloatInRange(0.8, 1.25)"
+              ]
+            },
+            {
+              "type": {
+                "value": "ScalableCapability::ScalableBehavior::SetY"
+              },
+              "parameters": [
+                "Cloud",
+                "Scale",
+                "*",
+                "RandomFloatInRange(1, 1.25)"
+              ]
+            },
+            {
+              "type": {
+                "value": "Scene3D::Base3DBehavior::SetScaleZ"
+              },
+              "parameters": [
+                "Cloud",
+                "Object3D",
+                "*",
+                "RandomFloatInRange(0.8, 1.125)"
+              ]
+            }
+          ]
+        }
+      ],
+      "parameters": [
+        {
+          "description": "",
+          "name": "Cloud",
+          "supplementaryInformation": "Scene3D::Model3DObject",
+          "type": "objectList"
+        },
+        {
+          "description": "3D Capability",
+          "name": "Object3D",
+          "supplementaryInformation": "Scene3D::Base3DBehavior",
+          "type": "behavior"
+        },
+        {
+          "description": "Scalable capability",
+          "name": "Scale",
+          "supplementaryInformation": "ScalableCapability::ScalableBehavior",
+          "type": "behavior"
+        },
+        {
+          "description": "Number of object to create",
+          "name": "ObjectCount",
+          "type": "expression"
+        },
+        {
+          "description": "Center X",
+          "name": "CenterX",
+          "type": "expression"
+        },
+        {
+          "description": "Center Y",
+          "name": "CenterY",
+          "type": "expression"
+        },
+        {
+          "description": "Minimum radius",
+          "name": "RadiusMin",
+          "type": "expression"
+        },
+        {
+          "description": "Maximum radius",
+          "name": "RadiusMax",
+          "type": "expression"
+        },
+        {
+          "description": "Minimum Z",
+          "name": "MinZ",
+          "type": "expression"
+        },
+        {
+          "description": "Maximum Z",
+          "name": "MaxZ",
+          "type": "expression"
+        }
+      ],
+      "objectGroups": []
+    }
+  ],
+  "eventsBasedBehaviors": [],
+  "eventsBasedObjects": []
+}

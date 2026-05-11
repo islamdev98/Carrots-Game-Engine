@@ -1,0 +1,20 @@
+{
+  "tier": "community",
+  "authorIds": [],
+  "extensionNamespace": "",
+  "fullName": "Wind Waker Ocean 2D Texture ",
+  "name": "WaterShader",
+  "version": "1.0.0",
+  "url": "/extensions/WaterShader.json",
+  "headerUrl": "/extensions/WaterShader-header.json",
+  "tags": [],
+  "category": "Visual effect",
+  "previewIconUrl": "",
+  "gdevelopVersion": ">=5.5.0",
+  "shortDescription": "A 3D plane with Wind Waker Ocean 2D shader",
+  "eventsBasedBehaviorsCount": 1,
+  "eventsFunctionsCount": 0,
+  "helpPath": "",
+  "description": "Original shader from:\nhttps://www.shadertoy.com/view/ltfGD7",
+  "iconUrl": ""
+}
