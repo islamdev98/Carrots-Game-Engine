@@ -15,10 +15,13 @@ namespace gdjs {
       //@ts-ignore
       this._threeObject3D.gdjsRuntimeObject = runtimeObject;
 
-      instanceContainer
-        .getLayer('')
-        .getRenderer()
-        .add3DRendererObject(this._threeObject3D);
+      const layer = instanceContainer.getLayer(runtimeObject.getLayer());
+      if (!layer) {
+        throw new Error(
+          `RuntimeObject3DRenderer: layer '${runtimeObject.getLayer()}' not found.`
+        );
+      }
+      layer.getRenderer().add3DRendererObject(this._threeObject3D);
     }
 
     get3DRendererObject() {

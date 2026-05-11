@@ -27,10 +27,11 @@ namespace gdjs {
       //@ts-ignore
       this._threeGroup.gdjsRuntimeObject = object;
 
-      const layer = parent.getLayer('');
-      if (layer) {
-        layer.getRenderer().add3DRendererObject(this._threeGroup);
+      const layer = parent.getLayer(object.getLayer());
+      if (!layer) {
+        throw new Error(`CustomRuntimeObject3DRenderer: layer '${object.getLayer()}' not found.`);
       }
+      layer.getRenderer().add3DRendererObject(this._threeGroup);
     }
 
     get3DRendererObject(): THREE.Object3D {
