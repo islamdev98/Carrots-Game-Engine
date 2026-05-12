@@ -1,4 +1,13 @@
 /* Mosaic layout */
+.mosaic-gd-theme {
+  --carrots-mosaic-window-radius: 10px;
+  --carrots-mosaic-toolbar-background-color: #1d222b;
+  --carrots-mosaic-body-background-color: #141922;
+  --carrots-mosaic-window-shadow: 0 8px 20px rgba(0, 0, 0, 0.26);
+  --carrots-mosaic-split-color: rgba(220, 229, 240, 0.22);
+  --carrots-mosaic-split-color-hover: rgba(220, 229, 240, 0.45);
+}
+
 .mosaic-gd-theme.mosaic {
   background-color: transparent !important;
 }
@@ -14,37 +23,38 @@
 
 /* Mosaic window and tile */
 .mosaic-gd-theme .mosaic-window-toolbar {
-  background: var(--mosaic-toolbar-background-color) !important;
+  background: var(--carrots-mosaic-toolbar-background-color) !important;
   box-shadow: none !important;
-}
-
-.mosaic-gd-theme .mosaic-window-toolbar {
-  border-top-right-radius: 4px !important;
-  border-top-left-radius: 4px !important;
+  border-top-right-radius: var(--carrots-mosaic-window-radius) !important;
+  border-top-left-radius: var(--carrots-mosaic-window-radius) !important;
+  border-bottom: 1px solid rgba(220, 229, 240, 0.1);
 }
 
 .mosaic-gd-theme .mosaic-window-body {
-  background: var(--mosaic-layout-background-color) !important;
-  border-bottom-left-radius: 4px !important;
-  border-bottom-right-radius: 4px !important;
+  background: var(--carrots-mosaic-body-background-color) !important;
+  border-bottom-left-radius: var(--carrots-mosaic-window-radius) !important;
+  border-bottom-right-radius: var(--carrots-mosaic-window-radius) !important;
+  box-shadow: var(--carrots-mosaic-window-shadow);
 }
 
 .mosaic-gd-theme .mosaic-window .mosaic-window-title {
   padding-left: 8px; /* Follow same spacing as in the rest of the app. */
   color: var(--mosaic-title-color) !important;
   font-weight: 400 !important;
-  font-family: var(--gdevelop-modern-font-family);
+  font-family: var(--font-family-base, var(--gdevelop-modern-font-family));
   font-size: 15px; /* Same as ClosableTabs font size */
 }
 
 /* Hovered titlebar background */
 .mosaic-gd-theme.mosaic-blueprint-theme .mosaic-window .mosaic-window-toolbar.draggable:hover,
 .mosaic-gd-theme.mosaic.mosaic-blueprint-theme .mosaic-preview .mosaic-window-toolbar.draggable:hover {
-  background: var(--mosaic-toolbar-background-color) !important;
+  background: var(--carrots-mosaic-toolbar-background-color) !important;
 }
 
 .mosaic-gd-theme .mosaic-window {
   pointer-events: all;
+  border-radius: var(--carrots-mosaic-window-radius);
+  overflow: hidden;
 }
 
 .mosaic-gd-theme .mosaic-split {
@@ -53,18 +63,18 @@
 
 /* Separator draggable background (horizontal split) */
 .mosaic-gd-theme .mosaic-split.-column .mosaic-split-line {
-  height: 2px;
-  background-color: var(--mosaic-toolbar-border-color-hover);
+  height: 4px;
+  background-color: var(--carrots-mosaic-split-color);
   opacity: 0;
-  border-radius: 2px;
-  width: 50px;
+  border-radius: 999px;
+  width: 64px;
   margin: auto;
-  top: 2px;
-  transition: opacity 0.1s ease-in-out;
+  top: 0;
+  transition: opacity 0.12s ease-in-out, background-color 0.12s ease-in-out;
 }
 
 .mosaic-gd-theme .mosaic-split.-column:hover .mosaic-split-line {
-  background-color: var(--mosaic-toolbar-border-color-hover);
+  background-color: var(--carrots-mosaic-split-color-hover);
   opacity: 1;
   box-shadow: none !important;
   cursor: ns-resize;
@@ -73,18 +83,18 @@
 
 /* Separator draggable background (vertical split) */
 .mosaic-gd-theme .mosaic-split.-row .mosaic-split-line {
-  width: 2px;
-  background-color: var(--mosaic-toolbar-border-color-hover);
+  width: 4px;
+  background-color: var(--carrots-mosaic-split-color);
   opacity: 0;
-  border-radius: 2px;
-  height: 50px;
+  border-radius: 999px;
+  height: 64px;
   margin: auto;
-  left: 2px;
-  transition: opacity 0.1s ease-in-out;
+  left: 0;
+  transition: opacity 0.12s ease-in-out, background-color 0.12s ease-in-out;
 }
 
 .mosaic-gd-theme .mosaic-split.-row:hover .mosaic-split-line {
-  background-color: var(--mosaic-toolbar-border-color-hover);
+  background-color: var(--carrots-mosaic-split-color-hover);
   opacity: 1;
   box-shadow: none !important;
   cursor: ew-resize;
