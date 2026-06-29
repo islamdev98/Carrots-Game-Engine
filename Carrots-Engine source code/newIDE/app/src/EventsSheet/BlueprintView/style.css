@@ -15,13 +15,12 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image:
-    linear-gradient(var(--bp-grid-small) 1px, transparent 1px),
+  background-image: linear-gradient(var(--bp-grid-small) 1px, transparent 1px),
     linear-gradient(90deg, var(--bp-grid-small) 1px, transparent 1px),
     linear-gradient(var(--bp-grid-large) 1px, transparent 1px),
     linear-gradient(90deg, var(--bp-grid-large) 1px, transparent 1px);
-  background-size:
-    calc(18px * var(--bp-grid-zoom, 1)) calc(18px * var(--bp-grid-zoom, 1)),
+  background-size: calc(18px * var(--bp-grid-zoom, 1))
+      calc(18px * var(--bp-grid-zoom, 1)),
     calc(18px * var(--bp-grid-zoom, 1)) calc(18px * var(--bp-grid-zoom, 1)),
     calc(90px * var(--bp-grid-zoom, 1)) calc(90px * var(--bp-grid-zoom, 1)),
     calc(90px * var(--bp-grid-zoom, 1)) calc(90px * var(--bp-grid-zoom, 1));
@@ -53,7 +52,11 @@
 .gd-blueprint-zoom-button {
   appearance: none;
   border: 1px solid rgba(120, 148, 187, 0.72);
-  background: linear-gradient(180deg, rgba(40, 51, 68, 0.96) 0%, rgba(28, 37, 51, 0.96) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(40, 51, 68, 0.96) 0%,
+    rgba(28, 37, 51, 0.96) 100%
+  );
   color: #e7f2ff;
   font-size: 12px;
   font-weight: 700;
@@ -68,6 +71,19 @@
   box-shadow: 0 0 0 1px rgba(167, 208, 255, 0.33) inset;
 }
 
+.gd-blueprint-zoom-button-active,
+.gd-blueprint-zoom-button-active:hover {
+  border-color: rgba(134, 226, 175, 0.96);
+  background: linear-gradient(
+    180deg,
+    rgba(48, 92, 70, 0.98) 0%,
+    rgba(32, 70, 52, 0.98) 100%
+  );
+  box-shadow: 0 0 0 1px rgba(145, 255, 190, 0.42) inset,
+    0 0 12px rgba(72, 222, 138, 0.22);
+  color: #effff5;
+}
+
 .gd-blueprint-zoom-button-value {
   min-width: 58px;
   letter-spacing: 0.2px;
@@ -75,6 +91,19 @@
 
 .gd-blueprint-zoom-button-overview {
   min-width: 74px;
+  padding: 0 8px;
+  font-size: 10px;
+}
+
+.gd-blueprint-toolbar-button,
+.gd-blueprint-carry-button {
+  min-width: 56px;
+  padding: 0 8px;
+  font-size: 10px;
+}
+
+.gd-blueprint-layout-button {
+  min-width: 52px;
   padding: 0 8px;
   font-size: 10px;
 }
@@ -148,13 +177,20 @@
   stroke-dasharray: 5 3;
 }
 
+.gd-blueprint-wire-hit-target {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
 .gd-blueprint-node {
   position: absolute;
   border-radius: 8px;
   border: 1px solid #0f1319;
   background: linear-gradient(180deg, #1f252f 0%, #171c24 100%);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset,
     0 10px 18px rgba(0, 0, 0, 0.32);
   color: #dce4ee;
   user-select: none;
@@ -169,9 +205,7 @@
 
 .gd-blueprint-node-selected {
   border-color: #8ab9ff;
-  box-shadow:
-    0 0 0 1px #8ab9ff,
-    0 0 0 2px rgba(72, 111, 168, 0.6),
+  box-shadow: 0 0 0 1px #8ab9ff, 0 0 0 2px rgba(72, 111, 168, 0.6),
     0 12px 21px rgba(0, 0, 0, 0.43);
 }
 
@@ -194,7 +228,8 @@
   touch-action: none;
 }
 
-.gd-events-blueprint-root.gd-events-blueprint-panning .gd-blueprint-node-drag-handle {
+.gd-events-blueprint-root.gd-events-blueprint-panning
+  .gd-blueprint-node-drag-handle {
   cursor: grabbing;
 }
 
@@ -399,49 +434,85 @@
   height: 12px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.78);
-  background: radial-gradient(circle at 35% 30%, #fcfeff 0%, #dce1e8 45%, #aab1bc 100%);
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.55),
-    0 0 6px rgba(0, 0, 0, 0.25);
+  background: radial-gradient(
+    circle at 35% 30%,
+    #fcfeff 0%,
+    #dce1e8 45%,
+    #aab1bc 100%
+  );
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 6px rgba(0, 0, 0, 0.25);
   cursor: crosshair;
   z-index: 3;
 }
 
 .gd-blueprint-pin-data {
-  background: radial-gradient(circle at 35% 30%, #fff3ba 0%, #efcf67 46%, #ae8b35 100%);
+  background: radial-gradient(
+    circle at 35% 30%,
+    #fff3ba 0%,
+    #efcf67 46%,
+    #ae8b35 100%
+  );
 }
 
 .gd-blueprint-pin-type-number {
-  background: radial-gradient(circle at 35% 30%, #dff3ff 0%, #80c9ff 46%, #2e6ca3 100%);
+  background: radial-gradient(
+    circle at 35% 30%,
+    #dff3ff 0%,
+    #80c9ff 46%,
+    #2e6ca3 100%
+  );
 }
 
 .gd-blueprint-pin-type-boolean {
-  background: radial-gradient(circle at 35% 30%, #ddffe6 0%, #7de8a6 46%, #2f7b4e 100%);
+  background: radial-gradient(
+    circle at 35% 30%,
+    #ddffe6 0%,
+    #7de8a6 46%,
+    #2f7b4e 100%
+  );
 }
 
 .gd-blueprint-pin-type-string {
-  background: radial-gradient(circle at 35% 30%, #fff0de 0%, #ffc17a 46%, #9e6330 100%);
+  background: radial-gradient(
+    circle at 35% 30%,
+    #fff0de 0%,
+    #ffc17a 46%,
+    #9e6330 100%
+  );
 }
 
 .gd-blueprint-pin-type-vector2 {
-  background: radial-gradient(circle at 35% 30%, #ddfbff 0%, #86efff 46%, #2d7c92 100%);
+  background: radial-gradient(
+    circle at 35% 30%,
+    #ddfbff 0%,
+    #86efff 46%,
+    #2d7c92 100%
+  );
 }
 
 .gd-blueprint-pin-type-vector3 {
-  background: radial-gradient(circle at 35% 30%, #f3e5ff 0%, #c78bff 46%, #65379b 100%);
+  background: radial-gradient(
+    circle at 35% 30%,
+    #f3e5ff 0%,
+    #c78bff 46%,
+    #65379b 100%
+  );
 }
 
 .gd-blueprint-pin-source {
-  box-shadow:
-    0 0 0 2px rgba(123, 205, 255, 0.75),
+  box-shadow: 0 0 0 2px rgba(123, 205, 255, 0.75),
     0 0 10px rgba(123, 205, 255, 0.45);
 }
 
 .gd-blueprint-pin-connectable {
   transform: scale(1.12) !important;
-  box-shadow:
-    0 0 0 2px rgba(126, 248, 190, 0.68),
+  box-shadow: 0 0 0 2px rgba(126, 248, 190, 0.68),
     0 0 9px rgba(126, 248, 190, 0.46);
+}
+
+.gd-blueprint-pin-incompatible {
+  opacity: 0.42;
+  filter: grayscale(0.45);
 }
 
 .gd-events-blueprint-empty-state {
@@ -453,7 +524,11 @@
   text-align: center;
   border-radius: 12px;
   border: 1px solid rgba(181, 199, 230, 0.24);
-  background: linear-gradient(180deg, rgba(25, 31, 41, 0.95) 0%, rgba(20, 24, 32, 0.95) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(25, 31, 41, 0.95) 0%,
+    rgba(20, 24, 32, 0.95) 100%
+  );
   box-shadow: 0 20px 34px rgba(0, 0, 0, 0.35);
   padding: 22px;
   color: #dce9ff;
@@ -486,9 +561,12 @@
   width: 320px;
   border-radius: 10px;
   border: 1px solid rgba(115, 139, 170, 0.52);
-  background: linear-gradient(180deg, rgba(24, 31, 42, 0.98) 0%, rgba(17, 22, 31, 0.98) 100%);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+  background: linear-gradient(
+    180deg,
+    rgba(24, 31, 42, 0.98) 0%,
+    rgba(17, 22, 31, 0.98) 100%
+  );
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05) inset,
     0 20px 32px rgba(0, 0, 0, 0.45);
   padding: 10px;
   z-index: 7;
@@ -544,7 +622,11 @@
 .gd-blueprint-context-menu-item {
   appearance: none;
   border: 1px solid rgba(102, 129, 164, 0.52);
-  background: linear-gradient(180deg, rgba(36, 48, 64, 0.75) 0%, rgba(25, 34, 47, 0.85) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(36, 48, 64, 0.75) 0%,
+    rgba(25, 34, 47, 0.85) 100%
+  );
   color: #dbeaf9;
   border-radius: 8px;
   padding: 8px;

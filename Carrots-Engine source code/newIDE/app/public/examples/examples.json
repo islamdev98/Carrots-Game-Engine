@@ -1,9 +1,75 @@
 {
-  "exampleShortHeaders": [],
+  "exampleShortHeaders": [
+    {
+      "id": "3d-wall-sliding",
+      "slug": "3d-wall-sliding",
+      "name": "3D Wall Sliding",
+      "shortDescription": "An advanced 3D first person platformer with wall sliding, camera tween, jump pads, unstable blocks, and sprint with camera effects.",
+      "description": "In this template you will learn how to make:\n- First person movement\n- Wall slide\n- Unstable blocks\n- Run feature with camera effects\n- Camera tween\n- Jump pads",
+      "license": "MIT",
+      "tags": ["3D", "Platformer", "First Person", "Wall Sliding", "Starting point"],
+      "previewImageUrls": [],
+      "gdevelopVersion": "5.5.239",
+      "codeSizeLevel": "large",
+      "difficultyLevel": "advanced",
+      "authorIds": [],
+      "linkedExampleShortHeaders": []
+    },
+    {
+      "id": "multiplayer-platformer-arrow-fight",
+      "slug": "multiplayer-platformer-arrow-fight",
+      "name": "Multiplayer Platformer Arrow Fight",
+      "shortDescription": "A local multiplayer platformer arena template where players jump, dodge, and fight with arrows.",
+      "description": "A ready-to-use local multiplayer platformer arena template with arrow combat, player indicators, platform movement, sounds, and menu/game scenes.",
+      "license": "MIT",
+      "tags": ["game", "Multiplayer", "Platformer", "Action", "Arrow Fight", "Starting point"],
+      "previewImageUrls": ["/examples/multiplayer.platformer.arrow.fight/thumbnail.png"],
+      "gdevelopVersion": "5.5.239",
+      "codeSizeLevel": "large",
+      "difficultyLevel": "intermediate",
+      "authorIds": [],
+      "linkedExampleShortHeaders": []
+    }
+  ],
   "filters": {
-    "allTags": [],
+    "allTags": ["3D", "Platformer", "First Person", "Wall Sliding", "Starting point", "game", "Multiplayer", "Action", "Arrow Fight"],
     "defaultTags": [],
     "tagsTree": []
   },
-  "examplesById": {}
+  "examplesById": {
+    "3d-wall-sliding": {
+      "id": "3d-wall-sliding",
+      "slug": "3d-wall-sliding",
+      "name": "3D Wall Sliding",
+      "shortDescription": "An advanced 3D first person platformer with wall sliding, camera tween, jump pads, unstable blocks, and sprint with camera effects.",
+      "description": "In this template you will learn how to make:\n- First person movement\n- Wall slide\n- Unstable blocks\n- Run feature with camera effects\n- Camera tween\n- Jump pads",
+      "license": "MIT",
+      "tags": ["3D", "Platformer", "First Person", "Wall Sliding", "Starting point"],
+      "previewImageUrls": [],
+      "gdevelopVersion": "5.5.239",
+      "codeSizeLevel": "large",
+      "difficultyLevel": "advanced",
+      "authorIds": [],
+      "linkedExampleShortHeaders": [],
+      "projectFileUrl": "/examples/3d.wall.sliding/3D wall sliding/3D wall sliding.json",
+      "authors": []
+    },
+    "multiplayer-platformer-arrow-fight": {
+      "id": "multiplayer-platformer-arrow-fight",
+      "slug": "multiplayer-platformer-arrow-fight",
+      "name": "Multiplayer Platformer Arrow Fight",
+      "shortDescription": "A local multiplayer platformer arena template where players jump, dodge, and fight with arrows.",
+      "description": "A ready-to-use local multiplayer platformer arena template with arrow combat, player indicators, platform movement, sounds, and menu/game scenes.",
+      "license": "MIT",
+      "tags": ["game", "Multiplayer", "Platformer", "Action", "Arrow Fight", "Starting point"],
+      "previewImageUrls": ["/examples/multiplayer.platformer.arrow.fight/thumbnail.png"],
+      "gdevelopVersion": "5.5.239",
+      "codeSizeLevel": "large",
+      "difficultyLevel": "intermediate",
+      "authorIds": [],
+      "linkedExampleShortHeaders": [],
+      "projectFileUrl": "/examples/multiplayer.platformer.arrow.fight/Multiplayer platformer arrow fight.json",
+      "authors": []
+    }
+  }
 }
