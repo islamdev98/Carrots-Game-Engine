@@ -3666,6 +3666,25 @@ module.exports = {
         objectContent.materialType = parsedMaterialType;
         return true;
       }
+      if (propertyName === 'wallThickness') {
+        objectContent.wallThickness = Math.max(0, parseFloat(newValue) || 0);
+        return true;
+      }
+      if (propertyName === 'csgMode') {
+        objectContent.csgMode = newValue === 'Combined' ? 'Combined' : 'Box';
+        return true;
+      }
+      if (propertyName === 'csgOperation') {
+        if (
+          newValue !== 'Union' &&
+          newValue !== 'Subtract' &&
+          newValue !== 'Intersect'
+        ) {
+          return false;
+        }
+        objectContent.csgOperation = newValue;
+        return true;
+      }
       if (
         propertyName === 'frontFaceResourceName' ||
         propertyName === 'backFaceResourceName' ||
@@ -3693,9 +3712,16 @@ module.exports = {
         propertyName === 'bottomFaceResourceRepeat' ||
         propertyName === 'enableTextureTransparency' ||
         propertyName === 'isCastingShadow' ||
-        propertyName === 'isReceivingShadow'
+        propertyName === 'isReceivingShadow' ||
+        propertyName === 'roomMode' ||
+        propertyName === 'facesInward' ||
+        propertyName === 'generateCollision'
       ) {
         objectContent[propertyName] = newValue === '1' || newValue === 'true';
+        if (propertyName === 'roomMode' && objectContent[propertyName]) {
+          objectContent.facesInward = true;
+          objectContent.generateCollision = true;
+        }
         return true;
       }
 
@@ -3755,6 +3781,67 @@ module.exports = {
         .setLabel(_('Depth'))
         .setMeasurementUnit(gd.MeasurementUnit.getPixel())
         .setGroup(_('Default size'));
+
+      objectProperties
+        .getOrCreate('roomMode')
+        .setValue(objectContent.roomMode ? 'true' : 'false')
+        .setType('boolean')
+        .setLabel(_('Room mode'))
+        .setDescription(
+          _(
+            'Invert faces inward and prepare floor, ceiling and wall collision surfaces.'
+          )
+        )
+        .setGroup(_('CSG'));
+
+      objectProperties
+        .getOrCreate('facesInward')
+        .setValue(
+          objectContent.facesInward || objectContent.roomMode ? 'true' : 'false'
+        )
+        .setType('boolean')
+        .setLabel(_('Flip faces inward'))
+        .setDescription(
+          _('Render the box faces from inside the volume for rooms and tunnels.')
+        )
+        .setGroup(_('CSG'));
+
+      objectProperties
+        .getOrCreate('generateCollision')
+        .setValue(objectContent.generateCollision !== false ? 'true' : 'false')
+        .setType('boolean')
+        .setLabel(_('Generate collision'))
+        .setGroup(_('CSG'));
+
+      objectProperties
+        .getOrCreate('wallThickness')
+        .setValue((objectContent.wallThickness || 8).toString())
+        .setType('number')
+        .setLabel(_('Wall thickness'))
+        .setMeasurementUnit(gd.MeasurementUnit.getPixel())
+        .setGroup(_('CSG'));
+
+      objectProperties
+        .getOrCreate('csgMode')
+        .setValue(objectContent.csgMode || 'Box')
+        .setType('choice')
+        .addChoice('Box', _('Box'))
+        .addChoice('Combined', _('Combined'))
+        .setLabel(_('CSG mode'))
+        .setGroup(_('CSG'))
+        .setAdvanced(true);
+
+      objectProperties
+        .getOrCreate('csgOperation')
+        .setValue(objectContent.csgOperation || 'Union')
+        .setType('choice')
+        .addChoice('Union', _('Union'))
+        .addChoice('Subtract', _('Subtract'))
+        .addChoice('Intersect', _('Intersect'))
+        .setLabel(_('CSG operation'))
+        .setGroup(_('CSG'))
+        .setAdvanced(true);
+
       objectProperties
         .getOrCreate('tint')
         .setValue(objectContent.tint || '255;255;255')
@@ -3969,6 +4056,12 @@ module.exports = {
       tint: '255;255;255',
       isCastingShadow: true,
       isReceivingShadow: true,
+      csgMode: 'Box',
+      csgOperation: 'Union',
+      roomMode: false,
+      facesInward: false,
+      wallThickness: 8,
+      generateCollision: true,
     };
 
     Cube3DObject.updateInitialInstanceProperty = function (
@@ -4003,7 +4096,8 @@ module.exports = {
       .setIncludeFile('Extensions/3D/A_RuntimeObject3D.js')
       .addIncludeFile('Extensions/3D/A_RuntimeObject3DRenderer.js')
       .addIncludeFile('Extensions/3D/Cube3DRuntimeObject.js')
-      .addIncludeFile('Extensions/3D/Cube3DRuntimeObjectPixiRenderer.js');
+      .addIncludeFile('Extensions/3D/Cube3DRuntimeObjectPixiRenderer.js')
+      .addIncludeFile('Extensions/3D/CSGTools.js');
 
     // Properties expressions/conditions/actions:
 
@@ -4470,6 +4564,154 @@ module.exports = {
       .addParameter('color', _('Tint'), '', false)
       .getCodeExtraInformation()
       .setFunctionName('setColor');
+
+    object
+      .addExpressionAndConditionAndAction(
+        'boolean',
+        'RoomMode',
+        _('Room mode'),
+        _('Room mode is enabled'),
+        _('having room mode enabled'),
+        _('CSG'),
+        'res/conditions/3d_box.svg'
+      )
+      .addParameter('object', _('3D cube'), 'Cube3DObject', false)
+      .useStandardParameters(
+        'boolean',
+        gd.ParameterOptions.makeNewOptions().setDescription(_('Enable room mode'))
+      )
+      .setFunctionName('setRoomMode')
+      .setGetter('isRoomModeEnabled');
+
+    object
+      .addExpressionAndConditionAndAction(
+        'boolean',
+        'FacesInward',
+        _('Faces inward'),
+        _('the mesh faces are inverted inward'),
+        _('having inward-facing mesh faces'),
+        _('CSG'),
+        'res/conditions/3d_box.svg'
+      )
+      .addParameter('object', _('3D cube'), 'Cube3DObject', false)
+      .useStandardParameters(
+        'boolean',
+        gd.ParameterOptions.makeNewOptions().setDescription(_('Faces inward'))
+      )
+      .setFunctionName('setFacesInward')
+      .setGetter('areFacesInward');
+
+    object
+      .addScopedAction(
+        'FlipFaces',
+        _('Flip face directions'),
+        _('Invert mesh face directions and recalculate normals.'),
+        _('Flip face directions of _PARAM0_'),
+        _('CSG'),
+        'res/conditions/3d_box.svg',
+        'res/conditions/3d_box.svg'
+      )
+      .addParameter('object', _('3D cube'), 'Cube3DObject', false)
+      .markAsSimple()
+      .setFunctionName('flipFaces');
+
+    object
+      .addExpressionAndConditionAndAction(
+        'number',
+        'WallThickness',
+        _('Wall thickness'),
+        _('the generated room wall thickness'),
+        _('the room wall thickness'),
+        _('CSG'),
+        'res/conditions/3d_box.svg'
+      )
+      .addParameter('object', _('3D cube'), 'Cube3DObject', false)
+      .useStandardParameters('number', gd.ParameterOptions.makeNewOptions())
+      .setFunctionName('setWallThickness')
+      .setGetter('getWallThickness');
+
+    object
+      .addExpressionAndConditionAndAction(
+        'boolean',
+        'GenerateCollision',
+        _('Generate collision'),
+        _('collision generation is enabled'),
+        _('having collision generated'),
+        _('CSG'),
+        'res/conditions/3d_box.svg'
+      )
+      .addParameter('object', _('3D cube'), 'Cube3DObject', false)
+      .useStandardParameters(
+        'boolean',
+        gd.ParameterOptions.makeNewOptions().setDescription(
+          _('Generate collision')
+        )
+      )
+      .setFunctionName('setCollisionGenerationEnabled')
+      .setGetter('isCollisionGenerationEnabled');
+
+    object
+      .addAction(
+        'WriteCollisionSurfaces',
+        _('Write generated collision surfaces'),
+        _(
+          'Write generated CSG collision surfaces for the box or room into a variable.'
+        ),
+        _('Write generated collision surfaces of _PARAM0_ into _PARAM1_'),
+        _('CSG'),
+        'res/conditions/3d_box.svg',
+        'res/conditions/3d_box.svg'
+      )
+      .addParameter('object', _('3D cube'), 'Cube3DObject', false)
+      .addParameter('scenevar', _('Result variable'), '', false)
+      .getCodeExtraInformation()
+      .setFunctionName('writeCollisionSurfaces');
+
+    extension
+      .addAction(
+        'GenerateConnectedRooms',
+        _('Generate connected rooms'),
+        _(
+          'Generate a deterministic room-and-corridor plan that editor tools can turn into editable CSG boxes.'
+        ),
+        _('Generate _PARAM1_ connected rooms using seed _PARAM0_'),
+        _('3D/CSG'),
+        'res/conditions/3d_box.svg',
+        'res/conditions/3d_box.svg'
+      )
+      .addParameter('string', _('Seed'), '', false)
+      .addParameter('number', _('Room count'), '', false)
+      .addParameter('number', _('Minimum room size'), '', false)
+      .addParameter('number', _('Maximum room size'), '', false)
+      .addParameter('number', _('Corridor width'), '', false)
+      .addParameter('scenevar', _('Result variable'), '', false)
+      .getCodeExtraInformation()
+      .setIncludeFile('Extensions/3D/CSGTools.js')
+      .setFunctionName('gdjs.scene3d.csg.generateConnectedRooms');
+
+    extension
+      .addAction(
+        'CombineCSGBoxes',
+        _('Combine CSG boxes'),
+        _(
+          'Combine CSG boxes into an editable descriptor using Union, Subtract or Intersect.'
+        ),
+        _('Combine _PARAM0_ as _PARAM1_ into _PARAM2_'),
+        _('3D/CSG'),
+        'res/conditions/3d_box.svg',
+        'res/conditions/3d_box.svg'
+      )
+      .addParameter('objectList', _('Source CSG boxes'), 'Cube3DObject', false)
+      .addParameter(
+        'stringWithSelector',
+        _('Operation'),
+        JSON.stringify(['Union', 'Subtract', 'Intersect']),
+        false
+      )
+      .addParameter('scenevar', _('Result variable'), '', false)
+      .getCodeExtraInformation()
+      .setIncludeFile('Extensions/3D/CSGTools.js')
+      .setFunctionName('gdjs.scene3d.csg.combineBoxes');
 
     const createSimplePrimitive3DObject = ({
       defaultWidth,
@@ -9540,6 +9782,32 @@ module.exports = {
       return targetMaterial;
     };
 
+    const invertGeometryFacesForPreview = (geometry, inverted) => {
+      if (geometry.userData.gdjsFacesInward === inverted) return;
+      const index = geometry.getIndex();
+      if (index) {
+        for (let i = 0; i < index.count; i += 3) {
+          const b = index.getX(i + 1);
+          const c = index.getX(i + 2);
+          index.setX(i + 1, c);
+          index.setX(i + 2, b);
+        }
+        index.needsUpdate = true;
+      }
+      const normal = geometry.getAttribute('normal');
+      if (normal) {
+        for (let i = 0; i < normal.count; i++) {
+          normal.setXYZ(i, -normal.getX(i), -normal.getY(i), -normal.getZ(i));
+        }
+        normal.needsUpdate = true;
+      } else {
+        geometry.computeVertexNormals();
+      }
+      geometry.computeBoundingBox();
+      geometry.computeBoundingSphere();
+      geometry.userData.gdjsFacesInward = inverted;
+    };
+
     class RenderedCube3DObject2DInstance extends RenderedInstance {
       /** @type {number} */
       _defaultWidth;
@@ -9765,6 +10033,7 @@ module.exports = {
       _shouldUseTransparentTexture = false;
       _materialType = 'Standard';
       _tint = '';
+      _facesInward = false;
 
       constructor(
         project,
@@ -10006,6 +10275,16 @@ module.exports = {
         if (facesOrientation !== this._facesOrientation) {
           this._facesOrientation = facesOrientation;
           uvMappingDirty = true;
+        }
+
+        const facesInward =
+          !!object.content.facesInward || !!object.content.roomMode;
+        if (facesInward !== this._facesInward) {
+          this._facesInward = facesInward;
+          invertGeometryFacesForPreview(
+            this._threeObject.geometry,
+            facesInward
+          );
         }
 
         const scaleX = width * (this._instance.isFlippedX() ? -1 : 1);

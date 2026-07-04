@@ -136,6 +136,38 @@ namespace gdjs {
     return material;
   };
 
+  const invertGeometryFaces = (
+    geometry: THREE.BufferGeometry,
+    inverted: boolean
+  ) => {
+    if (geometry.userData.gdjsFacesInward === inverted) return;
+
+    const index = geometry.getIndex();
+    if (index) {
+      for (let i = 0; i < index.count; i += 3) {
+        const b = index.getX(i + 1);
+        const c = index.getX(i + 2);
+        index.setX(i + 1, c);
+        index.setX(i + 2, b);
+      }
+      index.needsUpdate = true;
+    }
+
+    const normal = geometry.getAttribute('normal');
+    if (normal) {
+      for (let i = 0; i < normal.count; i++) {
+        normal.setXYZ(i, -normal.getX(i), -normal.getY(i), -normal.getZ(i));
+      }
+      normal.needsUpdate = true;
+    } else {
+      geometry.computeVertexNormals();
+    }
+
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    geometry.userData.gdjsFacesInward = inverted;
+  };
+
   class Cube3DRuntimeObjectPixiRenderer extends gdjs.RuntimeObject3DRenderer {
     private _cube3DRuntimeObject: gdjs.Cube3DRuntimeObject;
     private _boxMesh: THREE.Mesh;
@@ -163,6 +195,7 @@ namespace gdjs {
       this.updatePosition();
       this.updateRotation();
       this.updateTint();
+      this.updateFaceOrientation();
     }
 
     updateTint() {
@@ -191,6 +224,13 @@ namespace gdjs {
     updateShadowReceiving() {
       this._boxMesh.receiveShadow =
         this._cube3DRuntimeObject._isReceivingShadow;
+    }
+
+    updateFaceOrientation() {
+      invertGeometryFaces(
+        this._boxMesh.geometry,
+        this._cube3DRuntimeObject.areFacesInward()
+      );
     }
 
     updateFace(faceIndex: integer) {
