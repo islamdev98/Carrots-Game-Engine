@@ -31,7 +31,7 @@ const ipcRenderer = electron ? electron.ipcRenderer : null;
  * then wait for the editor to be closed and pass the results.
  */
 const openAndWaitForExternalEditorWindow = async (
-  editorName: 'piskel' | 'yarn' | 'jfxr',
+  editorName: 'piskel' | 'yarn' | 'jfxr' | 'particle-fx',
   externalEditorInput: ExternalEditorInput
 ): Promise<?ExternalEditorOutput> => {
   if (!ipcRenderer) throw new Error('Not supported.');
@@ -171,7 +171,7 @@ const editWithLocalExternalEditor = async ({
   resourceKind,
   options,
 }: {|
-  externalEditorName: 'piskel' | 'yarn' | 'jfxr',
+  externalEditorName: 'piskel' | 'yarn' | 'jfxr' | 'particle-fx',
   defaultName: string,
   metadataKey: string,
   resourceKind: ResourceKind,
@@ -306,6 +306,21 @@ const editors: Array<ResourceExternalEditor> = [
         externalEditorName: 'yarn',
         defaultName: 'New dialogue tree',
         metadataKey: 'yarn',
+        resourceKind: 'json',
+      });
+    },
+  },
+  {
+    name: 'ParticleFX',
+    createDisplayName: t`Create with ParticleFX`,
+    editDisplayName: t`Edit with ParticleFX`,
+    kind: 'json',
+    edit: async options => {
+      return await editWithLocalExternalEditor({
+        options,
+        externalEditorName: 'particle-fx',
+        defaultName: 'New particle effect',
+        metadataKey: 'particleFx',
         resourceKind: 'json',
       });
     },

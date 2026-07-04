@@ -20,6 +20,10 @@ const config = {
       from: '../app/resources/preview_node_modules',
       to: 'preview_node_modules',
     },
+    {
+      from: '../app/resources/particle-fx',
+      to: 'particle-fx',
+    },
   ],
   linux: {
     icon: path.join(__dirname, '../app/build/android-chrome-512x512.png'),
@@ -85,6 +89,12 @@ const config = {
   ],
 };
 
+const hasWindowsCodeSigningConfig =
+  (process.env.GD_SIGNTOOL_SUBJECT_NAME &&
+    process.env.GD_SIGNTOOL_THUMBPRINT) ||
+  process.env.WIN_CSC_LINK ||
+  process.env.CSC_LINK;
+
 if (
   process.env.GD_SIGNTOOL_SUBJECT_NAME &&
   process.env.GD_SIGNTOOL_THUMBPRINT
@@ -113,8 +123,13 @@ if (
     'ℹ️ Set Windows build signing options:',
     config.win.signtoolOptions
   );
-} else {
+} else if (!hasWindowsCodeSigningConfig) {
   console.log('ℹ️ No Windows build signing options set.');
+  config.win.signtoolOptions = {
+    sign: path.join(__dirname, 'scripts/electron-builder-skip-windows-sign.js'),
+  };
+} else {
+  console.log('ℹ️ Using Windows signing options from electron-builder env.');
 }
 
 module.exports = config;

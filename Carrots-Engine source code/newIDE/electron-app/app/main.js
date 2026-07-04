@@ -26,6 +26,7 @@ const {
   buildPlaceholderMainMenu,
 } = require('./MainMenu');
 const { loadExternalEditorWindow } = require('./LocalExternalEditorWindow');
+const { openParticleFxEditor } = require('./NativeParticleFxEditor');
 const { load, registerGdideProtocol } = require('./Utils/UrlLoader');
 const throttle = require('lodash.throttle');
 const { findLocalIp } = require('./Utils/LocalNetworkIpFinder');
@@ -505,6 +506,15 @@ app.on('ready', function() {
       parentWindow: parentWindow,
       devTools,
       indexSubPath: 'yarn/yarn-electron-index.html',
+      externalEditorInput,
+    });
+  });
+
+  // ParticleFX native particle editor
+  ipcMain.handle('particle-fx-load', (event, externalEditorInput) => {
+    const parentWindow = BrowserWindow.fromWebContents(event.sender);
+    return openParticleFxEditor({
+      parentWindow,
       externalEditorInput,
     });
   });

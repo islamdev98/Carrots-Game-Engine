@@ -21,6 +21,7 @@
 !/xgettext.exe
 !/ExtLibs/curl.exe
 !/ExtLibs/7za.exe
+!/newIDE/app/resources/particle-fx/particle-fx_0.2.0_x64-setup.exe
 !/ExtLibs/SFML/extlibs/**/*.dll
 !/ExtLibs/SFML/extlibs/**/*.so
 !/ExtLibs/SFML/extlibs/**/*.a
