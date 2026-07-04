@@ -1828,6 +1828,9 @@ namespace gdjs {
     _objectOldWidth: float = 0;
     _objectOldHeight: float = 0;
     _objectOldDepth: float = 0;
+    _objectOldRoomModeEnabled: boolean = false;
+    _objectOldRoomWallThickness: float = 0;
+    _objectOldRoomCollisionEnabled: boolean = false;
     private _physicsEulerZYX = new THREE.Euler(0, 0, 0, 'ZYX');
     private _physicsSnapshotFallbackQuaternion = new THREE.Quaternion();
     private _lastRaycastResult: Physics3DRaycastResult =
@@ -2552,6 +2555,37 @@ namespace gdjs {
       let shapeSettings: Jolt.ShapeSettings | null = null;
       /** This is fine only because no other Quat is used locally. */
       let quat: Jolt.Quat = this.getQuat(0, 0, 0, 1);
+      const csgRoomObject = this._getCSGRoomObject();
+      if (csgRoomObject && this._shape === 'Box') {
+        const roomWidth =
+          shapeDimensionA > 0
+            ? shapeDimensionA
+            : width > 0
+              ? width
+              : onePixel;
+        const roomHeight =
+          shapeDimensionB > 0
+            ? shapeDimensionB
+            : height > 0
+              ? height
+              : onePixel;
+        const roomDepth =
+          shapeDimensionC > 0
+            ? shapeDimensionC
+            : depth > 0
+              ? depth
+              : onePixel;
+        shapeSettings = this._createCSGRoomShapeSettings(
+          roomWidth,
+          roomHeight,
+          roomDepth,
+          Math.max(csgRoomObject.getWallThickness(), 1) *
+            this._sharedData.worldInvScale
+        );
+        this._shapeHalfWidth = roomWidth / 2;
+        this._shapeHalfHeight = roomHeight / 2;
+        this._shapeHalfDepth = roomDepth / 2;
+      }
       if (
         this._shape === 'Mesh' &&
         this._getEffectiveMeshColliderMode() !== 'BoundingBox'
@@ -2714,6 +2748,83 @@ namespace gdjs {
         quat,
         shapeSettings
       );
+    }
+
+    private _getCSGRoomObject():
+      | (gdjs.RuntimeObject3D & {
+          isRoomModeEnabled: () => boolean;
+          isCollisionGenerationEnabled: () => boolean;
+          getWallThickness: () => float;
+        })
+      | null {
+      const possibleCSGObject = this.owner3D as gdjs.RuntimeObject3D & {
+        isRoomModeEnabled?: () => boolean;
+        isCollisionGenerationEnabled?: () => boolean;
+        getWallThickness?: () => float;
+      };
+      if (
+        !possibleCSGObject.isRoomModeEnabled ||
+        !possibleCSGObject.isCollisionGenerationEnabled ||
+        !possibleCSGObject.getWallThickness
+      ) {
+        return null;
+      }
+      if (
+        !possibleCSGObject.isRoomModeEnabled() ||
+        !possibleCSGObject.isCollisionGenerationEnabled()
+      ) {
+        return null;
+      }
+      return possibleCSGObject as gdjs.RuntimeObject3D & {
+        isRoomModeEnabled: () => boolean;
+        isCollisionGenerationEnabled: () => boolean;
+        getWallThickness: () => float;
+      };
+    }
+
+    private _createCSGRoomShapeSettings(
+      width: float,
+      height: float,
+      depth: float,
+      wallThickness: float
+    ): Jolt.StaticCompoundShapeSettings {
+      const onePixel = this._sharedData.worldInvScale;
+      const thickness = Math.max(
+        onePixel,
+        Math.min(wallThickness, width / 2, height / 2, depth / 2)
+      );
+      const compoundShapeSettings = new Jolt.StaticCompoundShapeSettings();
+      const identityRotation = this.getQuat(0, 0, 0, 1);
+      const addBox = (
+        index: integer,
+        offsetX: float,
+        offsetY: float,
+        offsetZ: float,
+        boxWidth: float,
+        boxHeight: float,
+        boxDepth: float
+      ) => {
+        const boxShapeSettings = new Jolt.BoxShapeSettings(
+          this.getVec3(boxWidth / 2, boxHeight / 2, boxDepth / 2),
+          Math.min(onePixel, Math.min(boxWidth, boxHeight, boxDepth) / 4)
+        );
+        boxShapeSettings.mDensity = this.density;
+        compoundShapeSettings.AddShapeShapeSettings(
+          this.getVec3(offsetX, offsetY, offsetZ),
+          identityRotation,
+          boxShapeSettings,
+          index
+        );
+      };
+
+      addBox(0, 0, -height / 2 + thickness / 2, 0, width, thickness, depth);
+      addBox(1, 0, height / 2 - thickness / 2, 0, width, thickness, depth);
+      addBox(2, 0, 0, -depth / 2 + thickness / 2, width, height, thickness);
+      addBox(3, 0, 0, depth / 2 - thickness / 2, width, height, thickness);
+      addBox(4, -width / 2 + thickness / 2, 0, 0, thickness, height, depth);
+      addBox(5, width / 2 - thickness / 2, 0, 0, thickness, height, depth);
+
+      return compoundShapeSettings;
     }
 
     private _createMeshShapeSourceObject(
@@ -2991,6 +3102,14 @@ namespace gdjs {
       this._objectOldWidth = this.owner3D.getWidth();
       this._objectOldHeight = this.owner3D.getHeight();
       this._objectOldDepth = this.owner3D.getDepth();
+      const csgRoomObject = this._getCSGRoomObject();
+      this._objectOldRoomModeEnabled = !!csgRoomObject;
+      this._objectOldRoomWallThickness = csgRoomObject
+        ? csgRoomObject.getWallThickness()
+        : 0;
+      this._objectOldRoomCollisionEnabled = csgRoomObject
+        ? csgRoomObject.isCollisionGenerationEnabled()
+        : false;
     }
 
     getShapeScale(): float {
@@ -3182,6 +3301,14 @@ namespace gdjs {
       this._objectOldWidth = this.owner3D.getWidth();
       this._objectOldHeight = this.owner3D.getHeight();
       this._objectOldDepth = this.owner3D.getDepth();
+      const csgRoomObject = this._getCSGRoomObject();
+      this._objectOldRoomModeEnabled = !!csgRoomObject;
+      this._objectOldRoomWallThickness = csgRoomObject
+        ? csgRoomObject.getWallThickness()
+        : 0;
+      this._objectOldRoomCollisionEnabled = csgRoomObject
+        ? csgRoomObject.isCollisionGenerationEnabled()
+        : false;
       return true;
     }
 
@@ -3444,6 +3571,7 @@ namespace gdjs {
       // it isn't a box with custom height or a circle with custom radius
       if (
         this._needToRecreateShape ||
+        this._hasCSGRoomShapeChanged() ||
         (!this.hasCustomShapeDimension() &&
           (this._objectOldWidth !== this.owner3D.getWidth() ||
             this._objectOldHeight !== this.owner3D.getHeight() ||
@@ -3461,6 +3589,20 @@ namespace gdjs {
         this.shapeDimensionA > 0 ||
         this.shapeDimensionB > 0 ||
         this.shapeDimensionC > 0
+      );
+    }
+
+    private _hasCSGRoomShapeChanged(): boolean {
+      const csgRoomObject = this._getCSGRoomObject();
+      const isRoomModeEnabled = !!csgRoomObject;
+      const isCollisionGenerationEnabled = csgRoomObject
+        ? csgRoomObject.isCollisionGenerationEnabled()
+        : false;
+      const wallThickness = csgRoomObject ? csgRoomObject.getWallThickness() : 0;
+      return (
+        this._objectOldRoomModeEnabled !== isRoomModeEnabled ||
+        this._objectOldRoomCollisionEnabled !== isCollisionGenerationEnabled ||
+        this._objectOldRoomWallThickness !== wallThickness
       );
     }
 
