@@ -42,6 +42,37 @@ jobs:
         choco install cmake ninja git -y --no-progress
         Write-Host "✓ CMake, Ninja, and Git installed successfully" -ForegroundColor Green
       shell: pwsh
+
+    # ========== DIAGNOSTICS & NINJA FIX ==========
+    - name: Diagnostic: verify tools
+      run: |
+        Write-Host "ninja location:" (Get-Command ninja -ErrorAction SilentlyContinue).Path
+        ninja --version
+        cmake --version
+        emcc --version || Write-Host "emcc not found yet"
+      shell: pwsh
+
+    - name: Ensure ninja binary is available at repo path
+      run: |
+        Write-Host "Locating ninja..."
+        $ninja = (Get-Command ninja -ErrorAction SilentlyContinue).Path
+        if (-not $ninja) {
+          Write-Host "❌ ninja was not found on PATH" -ForegroundColor Red
+          exit 1
+        }
+        $destDir = Join-Path $env:GITHUB_WORKSPACE 'Carrots-Engine source code\GDevelop.js\ninja'
+        New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+        Copy-Item $ninja -Destination $destDir -Force
+        Write-Host "✓ Copied ninja to $destDir"
+      shell: pwsh
+
+    - name: Export CMAKE_MAKE_PROGRAM to env
+      run: |
+        $ninja = (Get-Command ninja -ErrorAction SilentlyContinue).Path
+        if (-not $ninja) { Write-Host "❌ ninja not found"; exit 1 }
+        Write-Host "CMAKE_MAKE_PROGRAM=$ninja" >> $env:GITHUB_ENV
+        Write-Host "✓ Exported CMAKE_MAKE_PROGRAM=$ninja"
+      shell: pwsh
     
     # ========== EMSCRIPTEN SETUP (CRITICAL FIX) ==========
     - name: Setup Emscripten SDK (Official)
