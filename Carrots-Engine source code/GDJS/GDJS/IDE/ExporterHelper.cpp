@@ -1500,19 +1500,21 @@ bool ExporterHelper::ExportTypeScriptProjectScripts(
             ? scriptElement.GetChild("behaviorName").GetStringValue()
             : "";
 
-    modules.push_back({uniqueModuleId,
-                       transpiledCode,
-                       includeFirst,
-                       contextKind,
-                       sceneName,
-                       objectName,
-                       behaviorName});
-    if (includeFirst) {
-      firstModuleIds.push_back(uniqueModuleId);
-    } else {
-      lastModuleIds.push_back(uniqueModuleId);
-    }
-  }
+    modules.push_back(ProjectTypeScriptModule{
+    uniqueModuleId,
+    transpiledCode,
+    includeFirst,
+    contextKind,
+    sceneName,
+    objectName,
+    behaviorName
+});
+
+if (includeFirst) {
+  firstModuleIds.push_back(uniqueModuleId);
+} else {
+  lastModuleIds.push_back(uniqueModuleId);
+}
 
   if (modules.empty()) return true;
 
