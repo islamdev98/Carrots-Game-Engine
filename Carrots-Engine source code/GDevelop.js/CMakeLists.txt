@@ -93,6 +93,11 @@ target_link_libraries(GD "-s NODEJS_CATCH_EXIT=0") # Don't print the entire GDCo
 target_link_libraries(GD "-s ERROR_ON_UNDEFINED_SYMBOLS=0")
 target_link_libraries(GD "-s \"EXPORTED_FUNCTIONS=['_free','_malloc']\"")
 
+# Emscripten-specific linking flags for proper bytecode generation
+target_link_libraries(GD "-sWASM=1") # Enable WebAssembly output
+target_link_libraries(GD "-sLINKABLE=1") # Enable linking of .a static libraries
+target_link_libraries(GD "-sWASM_ASYNC_COMPILATION=1") # Async WASM compilation
+
 if("${GDEVELOPJS_BUILD_VARIANT}" STREQUAL "dev")
 	# Disable optimizations at linking time for slightly faster builds.
 	# This is safe (https://emscripten.org/docs/optimizing/Optimizing-Code.html#link-times):
