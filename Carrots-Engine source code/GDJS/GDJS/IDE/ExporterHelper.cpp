@@ -1477,7 +1477,6 @@ bool ExporterHelper::ExportTypeScriptProjectScripts(
         scriptElement.HasChild("includePosition")
             ? scriptElement.GetChild("includePosition").GetStringValue()
             : "last";
-    const bool includeFirst = includePosition == "first";
 const bool includeFirst = includePosition == "first";
 
 gd::String contextKind =
