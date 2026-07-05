@@ -196,55 +196,64 @@ jobs:
 
           Write-Host "✓ GDevelop.js built successfully" -ForegroundColor Green
 
-          - name: Build Electron App
-         working-directory: "Carrots-Engine source code/newIDE/electron-app"
-         shell: pwsh
-         run: |
-           Write-Host "=== Starting Electron App Build ===" -ForegroundColor Yellow
-           
-           $env:NODE_ENV = "production"
-           
-           # Build the React/app files first
-           npm run build
-           
-           if ($LASTEXITCODE -ne 0) {
-             Write-Host "❌ Electron app build failed" -ForegroundColor Red
-             exit 1
-           }
-           
-           Write-Host "✓ Electron app built successfully" -ForegroundColor Green
+      - name: Build Electron App
+        working-directory: "Carrots-Engine source code/newIDE/electron-app"
+        shell: pwsh
+        run: |
+          Write-Host "=== Starting Electron App Build ===" -ForegroundColor Yellow
 
-       # ========= PACKAGE EXE =========
-       - name: Build Windows EXE
-         working-directory: "Carrots-Engine source code/newIDE/electron-app"
-         shell: pwsh
-         run: |
-           Write-Host "=== Creating Windows Executable ===" -ForegroundColor Yellow
-           
-           $env:NODE_ENV = "production"
-           
-           npm run make
-           
-           if ($LASTEXITCODE -ne 0) {
-             Write-Host "❌ EXE creation failed" -ForegroundColor Red
-             exit 1
-           }
-           
-           Write-Host "✓ EXE created successfully" -ForegroundColor Green
+          $env:NODE_ENV = "production"
 
-       # ========= UPLOAD =========
-       - name: Upload EXE artifacts
-         uses: actions/upload-artifact@v4
-         with:
-           name: Carrots-Engine-Windows-EXE
-           path: |
-             Carrots-Engine source code/newIDE/electron-app/out/make/**/*.exe
-           retention-days: 30
+          npm run build
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Electron app build failed" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "✓ Electron app built successfully" -ForegroundColor Green
+
+      # ========= PACKAGE EXE =========
+      - name: Build Windows EXE
+        working-directory: "Carrots-Engine source code/newIDE/electron-app"
+        shell: pwsh
+        run: |
+          Write-Host "=== Creating Windows Executable ===" -ForegroundColor Yellow
+
+          $env:NODE_ENV = "production"
+
+          npm run make
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ EXE creation failed" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "✓ EXE created successfully" -ForegroundColor Green
 
       # ========= VERIFY =========
       - name: Verify build artifacts
         shell: pwsh
         run: |
-          $distPath = "Carrots-Engine source code/newIDE/electron-app/dist"
+          $makePath = "Carrots-Engine source code/newIDE/electron-app/out/make"
 
-          Write-Host "Checking for EXE files in: $distPath" -ForegroundColor Cyan
+          Write-Host "Checking for EXE files in: $makePath" -ForegroundColor Cyan
+
+          $exeFiles = Get-ChildItem -Path $makePath -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue
+
+          if (-not $exeFiles -or $exeFiles.Count -eq 0) {
+            Write-Host "❌ No EXE files found in $makePath" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "✓ Found $($exeFiles.Count) EXE file(s):" -ForegroundColor Green
+          $exeFiles | ForEach-Object { Write-Host "  - $($_.FullName)" -ForegroundColor Green }
+
+      # ========= UPLOAD =========
+      - name: Upload EXE artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Carrots-Engine-Windows-EXE
+          path: |
+            Carrots-Engine source code/newIDE/electron-app/out/make/**/*.exe
+          retention-days: 30
