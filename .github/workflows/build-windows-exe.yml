@@ -20,7 +20,30 @@ jobs:
       with:
         node-version: '18'
     
-    - name: Install dependencies
+    - name: Install Grunt CLI globally
+      run: npm install -g grunt-cli
+    
+    - name: Install GDevelop.js dependencies
+      working-directory: './Carrots-Engine source code/GDevelop.js'
+      run: npm install --legacy-peer-deps
+    
+    - name: Build GDevelop.js (libGD.js)
+      working-directory: './Carrots-Engine source code/GDevelop.js'
+      run: npm run build
+    
+    - name: Install GDJS dependencies
+      working-directory: './Carrots-Engine source code/GDJS'
+      run: npm install --legacy-peer-deps
+    
+    - name: Build GDJS
+      working-directory: './Carrots-Engine source code/GDJS'
+      run: npm run build
+    
+    - name: Install app dependencies
+      working-directory: './Carrots-Engine source code/newIDE/app'
+      run: npm install --legacy-peer-deps
+    
+    - name: Install electron-app dependencies
       working-directory: './Carrots-Engine source code/newIDE/electron-app'
       run: npm install --legacy-peer-deps
     
