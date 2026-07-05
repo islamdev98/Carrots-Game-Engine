@@ -47,13 +47,14 @@ module.exports = function (grunt) {
       cmakeGeneratorArgs = ['-G "MinGW Makefiles"'];
       makeProgram = mingwBinary;
     } else {
-      // Use Ninja (by default)
-      const ninjaBinary = path.join(__dirname, 'ninja', 'ninja.exe');
-      cmakeGeneratorArgs = [
-        '-G "Ninja"',
-        `-DCMAKE_MAKE_PROGRAM="${ninjaBinary}"`,
-      ];
-      makeProgram = ninjaBinary;
+      // Use Ninja from PATH (GitHub Actions installs it with Chocolatey)
+const ninjaBinary = 'ninja';
+
+cmakeGeneratorArgs = [
+  '-G "Ninja"',
+];
+
+makeProgram = ninjaBinary;;
     }
 
     makeBinary = `emmake "${makeProgram}"`;
