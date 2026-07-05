@@ -10,7 +10,7 @@ on:
 env:
   NODE_VERSION: '18'
   PYTHON_VERSION: '3.11'
-
+  LIBGD_MAX_SIZE_MIB: '8'
 jobs:
   build-windows:
     name: Build Carrots Engine for Windows
@@ -166,6 +166,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "=== Starting Electron App Build ===" -ForegroundColor Yellow
+          $env:NODE_ENV = "production"
           npm run build
           if ($LASTEXITCODE -ne 0) {
             Write-Host "❌ Electron app build failed" -ForegroundColor Red
